@@ -14,7 +14,6 @@ import { AreaCard } from "./AreaCard";
 import { AvatarStack, PetAvatar } from "./PetAvatar";
 import { DashboardSkeleton } from "./DashboardSkeleton";
 import { LiveClock } from "./LiveClock";
-import { hotelGuests } from "@/lib/data/dashboard";
 import { rd, fmtTime, timeAgo, minutesUntil } from "@/lib/format";
 import type { AreaSummary } from "@/lib/data/dashboard";
 import type { AppointmentWithPet, RecentEvent } from "@/lib/supabase/queries";
@@ -22,6 +21,8 @@ import type { AppointmentWithPet, RecentEvent } from "@/lib/supabase/queries";
 export interface DashboardData {
   hospitalizedCount: number;
   hospitalizedNames: string[];
+  hotelGuestCount: number;
+  hotelGuestNames: string[];
   todayCount: number;
   nextAppointment?: { scheduled_at: string; reason: string; pet: { name: string } | null };
   revenueToday: number;
@@ -55,8 +56,11 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
     },
     {
       key: "hotel", title: "Hotel canino", href: "/hotel", tone: "accent",
-      metrics: [{ label: "Ocupación", value: "86%" }, { label: "Check-ins", value: "5" }],
-      highlight: "Próximamente (Tanda Hotel)", fill: 86,
+      metrics: [
+        { label: "Huéspedes hoy", value: String(data.hotelGuestCount) },
+        { label: "Estado", value: "En vivo" },
+      ],
+      highlight: "Reservas y reportes diarios activos", fill: 86,
     },
     {
       key: "peluqueria", title: "Peluquería", href: "/peluqueria", tone: "brand",
@@ -92,8 +96,10 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
         </Reveal>
 
         <Reveal className="h-full">
-          <LiveStat icon={BedDouble} label="Huéspedes en el hotel hoy" value={hotelGuests.length} tone="brand" href="/hotel">
-            <AvatarStack names={hotelGuests.map((p) => p.name)} max={5} size={34} />
+          <LiveStat icon={BedDouble} label="Huéspedes en el hotel hoy" value={data.hotelGuestCount} tone="brand" href="/hotel">
+            {data.hotelGuestNames.length > 0
+              ? <AvatarStack names={data.hotelGuestNames} max={5} size={34} />
+              : <span className="text-xs text-muted">Sin huéspedes hoy</span>}
           </LiveStat>
         </Reveal>
 

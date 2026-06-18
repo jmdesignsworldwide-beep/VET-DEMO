@@ -1,14 +1,9 @@
-"use client";
+import { getHotelData, getPetsWithOwner } from "@/lib/supabase/queries";
+import { HotelView } from "@/components/hotel/HotelView";
 
-import { BedDouble } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+export const dynamic = "force-dynamic";
 
-export default function HotelPage() {
-  return (
-    <ComingSoon
-      icon={BedDouble}
-      title="Hotel canino"
-      description="Ocupación por habitación, check-ins y check-outs, y el estado de cada huésped del día."
-    />
-  );
+export default async function HotelPage() {
+  const [hotel, pets] = await Promise.all([getHotelData(), getPetsWithOwner()]);
+  return <HotelView rooms={hotel.rooms} stays={hotel.stays} reports={hotel.reports} pets={pets} />;
 }

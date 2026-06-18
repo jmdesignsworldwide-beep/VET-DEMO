@@ -135,3 +135,47 @@ export interface PetWithOwner extends Pet {
 export interface OwnerWithPets extends Owner {
   pets: Pet[];
 }
+
+// ───────────────────────── Hotel ─────────────────────────
+
+export interface Room {
+  id: string;
+  name: string;
+  type: string;
+  capacity: number;
+  price_per_night: number;
+  status: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export type StayStatus = "reservada" | "en_curso" | "finalizada" | "cancelada";
+
+export interface Stay {
+  id: string;
+  pet_id: string;
+  room_id: string;
+  check_in: string;
+  check_out: string;
+  status: StayStatus;
+  price_per_night: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface StayFull extends Stay {
+  pet: PetWithOwner;
+  room: Room;
+}
+
+export interface DailyReport {
+  id: string;
+  stay_id: string;
+  pet_id: string;
+  report_date: string;
+  mood: string;
+  message: string;
+  activities: string[];
+  photo_path: string | null;
+  created_at: string;
+}

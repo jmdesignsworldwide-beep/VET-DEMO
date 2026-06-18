@@ -212,3 +212,102 @@ export async function addPetPhoto(formData: FormData): Promise<ActionResult> {
   revalidatePath(`/mascotas/${petId}`);
   return { ok: true };
 }
+
+// ───────────────────────── Hotel ─────────────────────────
+function nightsBetween(check_in: string, check_out: string): number {
+  const a = new Date(check_in).getTime();
+  const b = new Date(check_out).getTime();
+  return Math.max(1, Math.round((b - a) / 86400000));
+}
+
+export async function createStay(input: {
+  pet_id: string;
+  room_id: string;
+  check_in: string; // YYYY-MM-DD
+  check_out: string;
+  notes?: string;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!input.pet_id) return { ok: false, error: "Selecciona una mascota." };
+  if (!input.room_id) return { ok: false, error: "Selecciona una habitación." };
+  if (!input.check_in || !input.check_out) return { ok: false, error: "Indica las fechas." };
+  if (input.check_out <= input.check_in) return { ok: false, error: "La salida debe ser posterior a la entrada." };
+
+  // Disponibilidad: ¿hay solape en esa habitación?
+  const { data: clash } = await supabase
+    .from("stays")
+    .select("id")
+    .eq("room_id", input.room_id)
+    .in("status", ["reservada", "en_curso"])
+    .lt("check_in", input.check_out)
+    .gt("check_out", input.check_in);
+  if (clash && clash.length > 0)
+    return { ok: false, error: "Esa habitación no está disponible en esas fechas." };
+
+  const { data: room } = await supabase
+    .from("rooms")
+    .select("price_per_night")
+    .eq("id", input.room_id)
+    .single();
+  const price = room?.price_per_night ?? 1200;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const status = input.check_in <= today ? "en_curso" : "reservada";
+
+  const { data, error } = await supabase
+    .from("stays")
+    .insert({
+      pet_id: input.pet_id,
+      room_id: input.room_id,
+      check_in: input.check_in,
+      check_out: input.check_out,
+      status,
+      price_per_night: price,
+      notes: input.notes || null,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  const nights = nightsBetween(input.check_in, input.check_out);
+  await supabase.from("pet_events").insert({
+    pet_id: input.pet_id,
+    kind: "hotel_checkin",
+    title: "Reserva de hotel",
+    description: `${nights} noche(s) · entrada ${input.check_in}`,
+    amount: nights * price,
+    occurred_at: new Date(input.check_in).toISOString(),
+  });
+
+  revalidatePath("/hotel");
+  revalidatePath("/dashboard");
+  revalidatePath(`/mascotas/${input.pet_id}`);
+  return { ok: true, id: data.id };
+}
+
+export async function checkInStay(id: string, petId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("stays").update({ status: "en_curso" }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/hotel");
+  revalidatePath("/dashboard");
+  revalidatePath(`/mascotas/${petId}`);
+  return { ok: true };
+}
+
+export async function checkOutStay(id: string, petId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("stays").update({ status: "finalizada" }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await supabase.from("pet_events").insert({
+    pet_id: petId,
+    kind: "hotel_checkout",
+    title: "Salida del hotel",
+    description: "Check-out completado",
+    occurred_at: new Date().toISOString(),
+  });
+  revalidatePath("/hotel");
+  revalidatePath("/dashboard");
+  revalidatePath(`/mascotas/${petId}`);
+  return { ok: true };
+}
