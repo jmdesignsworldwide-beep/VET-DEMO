@@ -1,14 +1,9 @@
-"use client";
+import { getGroomingData, getPetsWithOwner } from "@/lib/supabase/queries";
+import { GroomingView } from "@/components/grooming/GroomingView";
 
-import { Scissors } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+export const dynamic = "force-dynamic";
 
-export default function PeluqueriaPage() {
-  return (
-    <ComingSoon
-      icon={Scissors}
-      title="Peluquería"
-      description="Cola de servicios, tiempos por mascota e ingresos del día del área de estética."
-    />
-  );
+export default async function PeluqueriaPage() {
+  const [grooming, pets] = await Promise.all([getGroomingData(), getPetsWithOwner()]);
+  return <GroomingView appointments={grooming.appointments} photos={grooming.photos} pets={pets} />;
 }

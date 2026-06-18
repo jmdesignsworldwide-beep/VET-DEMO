@@ -23,6 +23,8 @@ export interface DashboardData {
   hospitalizedNames: string[];
   hotelGuestCount: number;
   hotelGuestNames: string[];
+  groomingTodayCount: number;
+  groomingInProgress: number;
   todayCount: number;
   nextAppointment?: { scheduled_at: string; reason: string; pet: { name: string } | null };
   revenueToday: number;
@@ -64,8 +66,11 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
     },
     {
       key: "peluqueria", title: "Peluquería", href: "/peluqueria", tone: "brand",
-      metrics: [{ label: "En proceso", value: "2" }, { label: "En cola", value: "5" }],
-      highlight: "Próximamente (Tanda Peluquería)", fill: 58,
+      metrics: [
+        { label: "Citas hoy", value: String(data.groomingTodayCount) },
+        { label: "En proceso", value: String(data.groomingInProgress) },
+      ],
+      highlight: "Transformaciones antes/después en vivo", fill: 58,
     },
   ];
 

@@ -311,3 +311,105 @@ export async function checkOutStay(id: string, petId: string): Promise<ActionRes
   revalidatePath(`/mascotas/${petId}`);
   return { ok: true };
 }
+
+// ───────────────────────── Peluquería ─────────────────────────
+export async function createGroomingAppointment(input: {
+  pet_id: string;
+  scheduled_at: string;
+  service: string;
+  groomer?: string;
+  price?: number;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!input.pet_id) return { ok: false, error: "Selecciona una mascota." };
+  if (!input.scheduled_at) return { ok: false, error: "Indica fecha y hora." };
+  if (!input.service?.trim()) return { ok: false, error: "Indica el servicio." };
+
+  const { data, error } = await supabase
+    .from("grooming_appointments")
+    .insert({
+      pet_id: input.pet_id,
+      scheduled_at: input.scheduled_at,
+      service: input.service,
+      groomer: input.groomer || null,
+      price: input.price ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  await supabase.from("pet_events").insert({
+    pet_id: input.pet_id,
+    kind: "grooming",
+    title: `Cita de peluquería · ${input.service}`,
+    description: input.groomer || null,
+    amount: input.price ?? null,
+    occurred_at: input.scheduled_at,
+  });
+
+  revalidatePath("/peluqueria");
+  revalidatePath("/dashboard");
+  revalidatePath(`/mascotas/${input.pet_id}`);
+  return { ok: true, id: data.id };
+}
+
+export async function addGroomingPhotos(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const petId = formData.get("pet_id") as string;
+  const label = (formData.get("service_label") as string) || null;
+  const caption = (formData.get("caption") as string) || null;
+  const before = formData.get("before") as File | null;
+  const after = formData.get("after") as File | null;
+
+  if (!petId) return { ok: false, error: "Falta la mascota." };
+  if (!before || before.size === 0) return { ok: false, error: "Falta la foto del ANTES." };
+  if (!after || after.size === 0) return { ok: false, error: "Falta la foto del DESPUÉS." };
+  for (const f of [before, after])
+    if (f.size > 6 * 1024 * 1024) return { ok: false, error: "Cada imagen debe ser menor a 6 MB." };
+
+  const ts = Date.now();
+  async function up(file: File, tag: string): Promise<string | null> {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `grooming/${petId}/${ts}-${tag}.${ext}`;
+    const { error } = await supabase.storage.from("pet-photos").upload(path, file, { cacheControl: "3600" });
+    return error ? null : path;
+  }
+
+  const beforePath = await up(before, "antes");
+  const afterPath = await up(after, "despues");
+  if (!beforePath || !afterPath) return { ok: false, error: "Error al subir las imágenes." };
+
+  const { error: insErr } = await supabase.from("grooming_photos").insert({
+    pet_id: petId,
+    service_label: label,
+    before_path: beforePath,
+    after_path: afterPath,
+    caption,
+  });
+  if (insErr) return { ok: false, error: insErr.message };
+
+  await supabase.from("pet_events").insert({
+    pet_id: petId,
+    kind: "grooming",
+    title: "Transformación de peluquería ✂️",
+    description: label || caption,
+    occurred_at: new Date().toISOString(),
+  });
+
+  revalidatePath("/peluqueria");
+  revalidatePath(`/mascotas/${petId}`);
+  return { ok: true };
+}
+
+export async function updateGroomingPreferences(
+  petId: string,
+  input: { cut_type?: string; products?: string; frequency_weeks?: number; groomer_pref?: string; notes?: string },
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("grooming_preferences")
+    .upsert({ pet_id: petId, ...input, updated_at: new Date().toISOString() });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/mascotas/${petId}`);
+  return { ok: true };
+}
