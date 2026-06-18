@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Send, Heart, PawPrint, AlertTriangle, Mail } from "lucide-react";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
@@ -18,32 +19,38 @@ export function PostcardButton({
 }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-xl bg-accent/15 px-3 py-2 text-sm font-semibold text-accent transition-shadow hover:shadow-glow-accent"
-      >
-        <Mail className="h-4 w-4" /> Tarjeta postal
-      </button>
+  useEffect(() => setMounted(true), []);
 
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 30, rotateX: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 280, damping: 26 }}
-              className="relative z-10 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[28px] bg-elevated shadow-lift"
-              style={{ perspective: 1000 }}
-            >
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [open]);
+
+  const overlay = (
+    <AnimatePresence>
+      {open && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+          style={{ perspective: 1000 }}
+        >
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 30, rotateX: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 280, damping: 26 }}
+            className="relative z-10 max-h-[90dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] bg-elevated shadow-lift"
+          >
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar"
@@ -131,6 +138,17 @@ export function PostcardButton({
           </div>
         )}
       </AnimatePresence>
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 rounded-xl bg-accent/15 px-3 py-2 text-sm font-semibold text-accent transition-shadow hover:shadow-glow-accent"
+      >
+        <Mail className="h-4 w-4" /> Tarjeta postal
+      </button>
+      {mounted ? createPortal(overlay, document.body) : null}
     </>
   );
 }
