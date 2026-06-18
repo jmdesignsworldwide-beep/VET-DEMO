@@ -72,8 +72,8 @@ export function PetFicha({ pet }: { pet: PetFull }) {
         </div>
       </GlassCard>
 
-      {/* Tabs */}
-      <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+      {/* Tabs — fluyen en varias filas, todas visibles sin scroll */}
+      <div className="mt-5 flex flex-wrap gap-2">
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.key;
@@ -82,8 +82,8 @@ export function PetFicha({ pet }: { pet: PetFull }) {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "relative flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors",
-                active ? "text-ink" : "text-muted hover:text-ink",
+                "relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                active ? "text-ink" : "bg-ink/[0.04] text-muted hover:text-ink",
               )}
             >
               {active && (
