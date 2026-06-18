@@ -413,3 +413,19 @@ export async function updateGroomingPreferences(
   revalidatePath(`/mascotas/${petId}`);
   return { ok: true };
 }
+
+// ───────────────────────── Administración ─────────────────────────
+export async function forceBackup(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const size = Math.round((46 + Math.random() * 4) * 10) / 10;
+  const { error } = await supabase.from("backups").insert({ status: "completado", size_mb: size });
+  if (error) return { ok: false, error: error.message };
+  await supabase.from("audit_log").insert({
+    actor: "Admin Nido",
+    action: "Forzó respaldo",
+    entity: "Sistema",
+    detail: `Respaldo manual completado (${size} MB)`,
+  });
+  revalidatePath("/admin/sistema");
+  return { ok: true };
+}

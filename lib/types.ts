@@ -232,3 +232,90 @@ export interface GroomingPhoto {
 export interface GroomingPhotoFull extends GroomingPhoto {
   pet: PetWithOwner;
 }
+
+// ───────────────────────── Administración ─────────────────────────
+
+export interface Employee {
+  id: string;
+  full_name: string;
+  role: string;
+  area: string;
+  cedula: string | null;
+  phone: string | null;
+  email: string | null;
+  salary: number | null;
+  hired_on: string | null;
+  vacation_total: number;
+  vacation_taken: number;
+  status: string;
+  created_at: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  stock: number;
+  min_stock: number;
+  price: number | null;
+  expiry_date: string | null;
+  supplier: string | null;
+  created_at: string;
+}
+
+export interface Expense {
+  id: string;
+  category: string;
+  area: string;
+  description: string | null;
+  amount: number;
+  spent_on: string;
+  created_at: string;
+}
+
+export interface InvoiceItem {
+  descripcion: string;
+  cantidad: number;
+  precio: number;
+}
+
+export interface Invoice {
+  id: string;
+  ncf: string;
+  ncf_type: string;
+  customer_name: string;
+  customer_rnc: string | null;
+  area: string;
+  subtotal: number;
+  itbis: number;
+  total: number;
+  status: string;
+  items: InvoiceItem[];
+  issued_at: string;
+}
+
+export interface WhatsAppLog {
+  id: string;
+  to_name: string;
+  to_phone: string | null;
+  message: string;
+  kind: string;
+  sent_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  actor: string;
+  action: string;
+  entity: string | null;
+  detail: string | null;
+  created_at: string;
+}
+
+export interface Backup {
+  id: string;
+  status: string;
+  size_mb: number | null;
+  created_at: string;
+}

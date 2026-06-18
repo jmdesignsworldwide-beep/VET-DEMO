@@ -4,7 +4,7 @@ import {
   BedDouble,
   Scissors,
   PawPrint,
-  TrendingUp,
+  Building2,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -19,10 +19,10 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { label: "Resumen", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Citas", href: "/citas", icon: CalendarHeart, soon: true },
-  { label: "Hotel canino", href: "/hotel", icon: BedDouble, soon: true },
-  { label: "Peluquería", href: "/peluqueria", icon: Scissors, soon: true },
-  { label: "Clientes", href: "/clientes", icon: PawPrint, soon: true },
-  { label: "Ventas", href: "/ventas", icon: TrendingUp, soon: true },
-  { label: "Ajustes", href: "/ajustes", icon: Settings, soon: true },
+  { label: "Clientes", href: "/clientes", icon: PawPrint },
+  { label: "Citas", href: "/citas", icon: CalendarHeart },
+  { label: "Hotel canino", href: "/hotel", icon: BedDouble },
+  { label: "Peluquería", href: "/peluqueria", icon: Scissors },
+  { label: "Administración", href: "/admin", icon: Building2 },
+  { label: "Ajustes", href: "/ajustes", icon: Settings },
 ];

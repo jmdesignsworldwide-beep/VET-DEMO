@@ -122,7 +122,7 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
         </Reveal>
 
         <Reveal className="h-full">
-          <LiveStat icon={Wallet} label="Ingresos del día" value={data.revenueToday} prefix="RD$ " tone="brand" href="/ventas">
+          <LiveStat icon={Wallet} label="Ingresos del día" value={data.revenueToday} prefix="RD$ " tone="brand" href="/admin">
             <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand dark:text-brand-glow">
               <TrendingUp className="h-3.5 w-3.5" /> consultas de hoy
             </span>
