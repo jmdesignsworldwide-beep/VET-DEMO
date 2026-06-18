@@ -1,23 +1,129 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   TOKENS CENTRALIZADOS — Clínica Nido
+   Surfaces como canales RGB (para soportar /opacity en Tailwind).
+   ───────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* TEMA CLARO — crema cálido elegante (no es inversión del oscuro) */
+    --canvas: 250 247 242; /* #FAF7F2 crema base */
+    --surface: 255 253 250;
+    --elevated: 255 255 255;
+    --ink: 24 33 46; /* texto profundo, casi tinta */
+    --muted: 96 110 128;
+    --hairline: 18 30 45; /* usado con baja opacidad */
+
+    --glass-bg: 255 255 255;
+    --glass-strength: 0.6;
+    --aurora-a: 45 212 191; /* turquesa glow */
+    --aurora-b: 251 113 133; /* coral */
+    --aurora-opacity: 0.28;
+
+    --font-display: "";
+    --font-sans: "";
+  }
+
+  .dark {
+    /* TEMA OSCURO — near-black con aurora que respira */
+    --canvas: 10 15 26; /* #0A0F1A */
+    --surface: 17 24 39;
+    --elevated: 24 33 51;
+    --ink: 233 238 245;
+    --muted: 148 163 184;
+    --hairline: 226 240 255;
+
+    --glass-bg: 24 33 51;
+    --glass-strength: 0.5;
+    --aurora-a: 20 184 166;
+    --aurora-b: 251 113 133;
+    --aurora-opacity: 0.45;
+  }
+
+  * {
+    border-color: rgb(var(--hairline) / 0.1);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    font-feature-settings: "ss01", "cv01";
+    transition:
+      background-color 0.5s ease,
+      color 0.4s ease;
+  }
+
+  /* Números financieros / KPIs siempre tabulares */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background: rgb(20 184 166 / 0.3);
+    color: rgb(var(--ink));
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--muted) / 0.35);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
 }
 
-body {
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+/* ─────────────────────────────────────────────────────────────
+   PRIMITIVOS DE SUPERFICIE
+   ───────────────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: rgb(var(--glass-bg) / var(--glass-strength));
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgb(var(--hairline) / 0.12);
+  }
+
+  .glass-strong {
+    background: rgb(var(--glass-bg) / calc(var(--glass-strength) + 0.25));
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    border: 1px solid rgb(var(--hairline) / 0.14);
+  }
+
+  /* Texto con degradado de marca */
+  .text-gradient {
+    background: linear-gradient(120deg, #2dd4bf 0%, #14b8a6 45%, #fb7185 110%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .ring-focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--canvas)), 0 0 0 4px rgb(45 212 191 / 0.6);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ACCESIBILIDAD — respeta prefers-reduced-motion
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
