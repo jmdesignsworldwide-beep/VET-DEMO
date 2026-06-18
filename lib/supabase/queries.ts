@@ -12,6 +12,10 @@ import type {
   Prescription,
   PetPhoto,
   PetEvent,
+  Room,
+  Stay,
+  StayFull,
+  DailyReport,
 } from "@/lib/types";
 
 /** Dueños con sus mascotas (búsqueda opcional por nombre/cédula/teléfono). */
@@ -68,6 +72,7 @@ export interface PetFull extends PetWithOwner {
   prescriptions: Prescription[];
   photos: PetPhoto[];
   events: PetEvent[];
+  stays: (Stay & { room: Room })[];
 }
 
 /** Ficha completa de una mascota (todo lo que cuelga de ella). */
@@ -80,7 +85,7 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
     .single();
   if (!pet) return null;
 
-  const [records, vaccinations, hospitalizations, prescriptions, photos, events] =
+  const [records, vaccinations, hospitalizations, prescriptions, photos, events, stays] =
     await Promise.all([
       supabase.from("medical_records").select("*").eq("pet_id", id).order("occurred_at", { ascending: false }),
       supabase.from("vaccinations").select("*").eq("pet_id", id).order("applied_at", { ascending: false }),
@@ -88,6 +93,7 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
       supabase.from("prescriptions").select("*").eq("pet_id", id).order("issued_at", { ascending: false }),
       supabase.from("pet_photos").select("*").eq("pet_id", id).order("taken_at", { ascending: false }),
       supabase.from("pet_events").select("*").eq("pet_id", id).order("occurred_at", { ascending: false }),
+      supabase.from("stays").select("*, room:rooms(*)").eq("pet_id", id).order("check_in", { ascending: false }),
     ]);
 
   return {
@@ -98,6 +104,7 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
     prescriptions: (prescriptions.data as Prescription[]) ?? [],
     photos: (photos.data as PetPhoto[]) ?? [],
     events: (events.data as PetEvent[]) ?? [],
+    stays: (stays.data as (Stay & { room: Room })[]) ?? [],
   };
 }
 
@@ -182,6 +189,36 @@ export async function getRecentEvents(limit = 6): Promise<RecentEvent[]> {
   }));
 }
 
+// ───────────────────────── Hotel ─────────────────────────
+
+export interface HotelData {
+  rooms: Room[];
+  stays: StayFull[];
+  reports: DailyReport[];
+}
+
+export async function getHotelData(): Promise<HotelData> {
+  const supabase = await createClient();
+  const [rooms, stays, reports] = await Promise.all([
+    supabase.from("rooms").select("*").order("name"),
+    supabase
+      .from("stays")
+      .select("*, pet:pets(*, owner:owners(*)), room:rooms(*)")
+      .order("check_in", { ascending: false }),
+    supabase.from("daily_reports").select("*").order("report_date", { ascending: false }),
+  ]);
+  return {
+    rooms: (rooms.data as Room[]) ?? [],
+    stays: (stays.data as StayFull[]) ?? [],
+    reports: (reports.data as DailyReport[]) ?? [],
+  };
+}
+
+function todayISODate(): string {
+  const n = new Date();
+  return `${n.getFullYear()}-${`${n.getMonth() + 1}`.padStart(2, "0")}-${`${n.getDate()}`.padStart(2, "0")}`;
+}
+
 /** Métricas en vivo para el dashboard (lee de las mismas tablas). */
 export async function getDashboardLive() {
   const supabase = await createClient();
@@ -189,8 +226,9 @@ export async function getDashboardLive() {
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
+  const today = todayISODate();
 
-  const [hosp, todayAppts, revenueRows] = await Promise.all([
+  const [hosp, todayAppts, revenueRows, guests] = await Promise.all([
     supabase
       .from("hospitalizations")
       .select("pet:pets(name)")
@@ -206,11 +244,21 @@ export async function getDashboardLive() {
       .select("price, occurred_at")
       .gte("occurred_at", start.toISOString())
       .lt("occurred_at", end.toISOString()),
+    supabase
+      .from("stays")
+      .select("pet:pets(name)")
+      .lte("check_in", today)
+      .gt("check_out", today)
+      .neq("status", "cancelada"),
   ]);
 
   const hospNames =
     (hosp.data as { pet: { name: string } | null }[] | null)?.map(
       (h) => h.pet?.name ?? "?",
+    ) ?? [];
+  const guestNames =
+    (guests.data as { pet: { name: string } | null }[] | null)?.map(
+      (g) => g.pet?.name ?? "?",
     ) ?? [];
   const appts = (todayAppts.data as { scheduled_at: string; reason: string; pet: { name: string } | null }[] | null) ?? [];
   const revenue =
@@ -222,6 +270,8 @@ export async function getDashboardLive() {
   return {
     hospitalizedCount: hospNames.length,
     hospitalizedNames: hospNames,
+    hotelGuestCount: guestNames.length,
+    hotelGuestNames: guestNames,
     todayCount: appts.length,
     nextAppointment: appts.find(
       (a) => new Date(a.scheduled_at).getTime() > Date.now(),

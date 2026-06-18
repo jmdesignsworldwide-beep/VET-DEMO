@@ -5,8 +5,9 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, Stethoscope, Syringe, HeartPulse, FileText,
-  Images, User, ChevronDown, FileDown, AlertTriangle,
+  Images, User, ChevronDown, FileDown, AlertTriangle, BedDouble,
 } from "lucide-react";
+import { nights } from "@/lib/hotel";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
 import { Timeline } from "./Timeline";
 import { EditPetButton } from "./PetForm";
@@ -25,6 +26,7 @@ const TABS = [
   { key: "historia", label: "Historia clínica", icon: Stethoscope },
   { key: "vacunas", label: "Vacunas", icon: Syringe },
   { key: "hospital", label: "Hospitalización", icon: HeartPulse },
+  { key: "hotel", label: "Estadías", icon: BedDouble },
   { key: "recetas", label: "Recetas", icon: FileText },
   { key: "fotos", label: "Fotos", icon: Images },
 ] as const;
@@ -108,6 +110,7 @@ export function PetFicha({ pet }: { pet: PetFull }) {
             {tab === "historia" && <Historia pet={pet} />}
             {tab === "vacunas" && <Vacunas pet={pet} />}
             {tab === "hospital" && <Hospital pet={pet} />}
+            {tab === "hotel" && <Estadias pet={pet} />}
             {tab === "recetas" && <Recetas pet={pet} />}
             {tab === "fotos" && <Fotos pet={pet} />}
           </motion.div>
@@ -222,6 +225,33 @@ function Hospital({ pet }: { pet: PetFull }) {
           </GlassCard>
         );
       })}
+    </div>
+  );
+}
+
+function Estadias({ pet }: { pet: PetFull }) {
+  if (pet.stays.length === 0) return <Empty text="Sin estadías en el hotel." />;
+  const tone = (s: string) =>
+    s === "en_curso" ? "bg-accent/15 text-accent"
+    : s === "reservada" ? "bg-brand/15 text-brand dark:text-brand-glow"
+    : "bg-ink/[0.06] text-muted";
+  return (
+    <div className="space-y-3">
+      {pet.stays.map((s) => (
+        <GlassCard key={s.id} glow={s.status === "en_curso"} className="flex items-center gap-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
+            <BedDouble className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{s.room?.name} · {s.room?.type}</p>
+            <p className="text-xs text-muted">{fmtDate(s.check_in)} → {fmtDate(s.check_out)} · {nights(s.check_in, s.check_out)} noche(s)</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold tabular-nums text-brand dark:text-brand-glow">{rd(nights(s.check_in, s.check_out) * s.price_per_night)}</p>
+            <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", tone(s.status))}>{s.status.replace("_", " ")}</span>
+          </div>
+        </GlassCard>
+      ))}
     </div>
   );
 }

@@ -19,6 +19,8 @@ export default async function DashboardPage() {
       data={{
         hospitalizedCount: live.hospitalizedCount,
         hospitalizedNames: live.hospitalizedNames,
+        hotelGuestCount: live.hotelGuestCount,
+        hotelGuestNames: live.hotelGuestNames,
         todayCount: live.todayCount,
         nextAppointment: live.nextAppointment,
         revenueToday: live.revenueToday,
