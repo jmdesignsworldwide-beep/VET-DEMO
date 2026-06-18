@@ -51,14 +51,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         const className = cn(
           "group relative flex items-center gap-3 rounded-xl px-3 py-2.5",
           "transition-colors hover:bg-ink/[0.04]",
-          item.soon && "cursor-default opacity-80 hover:bg-transparent",
         );
 
-        return item.soon ? (
-          <div key={item.href} className={className} aria-disabled>
-            {content}
-          </div>
-        ) : (
+        return (
           <Link
             key={item.href}
             href={item.href}
