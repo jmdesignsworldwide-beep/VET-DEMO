@@ -1,14 +1,12 @@
-"use client";
+import { getAppointments, getPetsWithOwner } from "@/lib/supabase/queries";
+import { AppointmentsView } from "@/components/clinica/AppointmentsView";
 
-import { CalendarHeart } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+export const dynamic = "force-dynamic";
 
-export default function CitasPage() {
-  return (
-    <ComingSoon
-      icon={CalendarHeart}
-      title="Citas"
-      description="Agenda clínica completa: programación, recordatorios y estado de cada cita en tiempo real."
-    />
-  );
+export default async function CitasPage() {
+  const [appointments, pets] = await Promise.all([
+    getAppointments(),
+    getPetsWithOwner(),
+  ]);
+  return <AppointmentsView appointments={appointments} pets={pets} />;
 }

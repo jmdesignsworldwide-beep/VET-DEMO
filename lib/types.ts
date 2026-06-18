@@ -1,0 +1,137 @@
+/** Tipos del dominio Clínica (espejo del esquema de Supabase). */
+
+export interface Owner {
+  id: string;
+  full_name: string;
+  cedula: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface Pet {
+  id: string;
+  owner_id: string;
+  name: string;
+  species: string;
+  breed: string | null;
+  sex: string | null;
+  birthdate: string | null;
+  weight_kg: number | null;
+  color: string | null;
+  allergies: string | null;
+  microchip: string | null;
+  photo_url: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface Appointment {
+  id: string;
+  pet_id: string;
+  scheduled_at: string;
+  reason: string;
+  status: "programada" | "completada" | "cancelada";
+  vet_name: string | null;
+  notes: string | null;
+  price: number | null;
+  created_at: string;
+}
+
+export interface MedicalRecord {
+  id: string;
+  pet_id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  diagnosis: string | null;
+  treatment: string | null;
+  vet_name: string | null;
+  price: number | null;
+  occurred_at: string;
+  created_at: string;
+}
+
+export interface Vaccination {
+  id: string;
+  pet_id: string;
+  vaccine: string;
+  applied_at: string;
+  next_due: string | null;
+  vet_name: string | null;
+  lot: string | null;
+  created_at: string;
+}
+
+export interface Hospitalization {
+  id: string;
+  pet_id: string;
+  reason: string;
+  status: "estable" | "en observación" | "crítico" | "recuperación";
+  treatment: string | null;
+  notes: string | null;
+  vet_name: string | null;
+  admitted_at: string;
+  discharged_at: string | null;
+  created_at: string;
+}
+
+export interface PrescriptionItem {
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface Prescription {
+  id: string;
+  pet_id: string;
+  vet_name: string;
+  issued_at: string;
+  items: PrescriptionItem[];
+  instructions: string | null;
+  created_at: string;
+}
+
+export interface PetPhoto {
+  id: string;
+  pet_id: string;
+  storage_path: string;
+  caption: string | null;
+  taken_at: string;
+  created_at: string;
+}
+
+export type EventKind =
+  | "hotel_checkin"
+  | "hotel_checkout"
+  | "grooming"
+  | "vaccine"
+  | "consultation"
+  | "hospitalization"
+  | "discharge"
+  | "photo"
+  | "appointment";
+
+export interface PetEvent {
+  id: string;
+  pet_id: string;
+  kind: EventKind;
+  title: string;
+  description: string | null;
+  amount: number | null;
+  occurred_at: string;
+  created_at: string;
+}
+
+/** Mascota con su dueño (join). */
+export interface PetWithOwner extends Pet {
+  owner: Owner;
+}
+
+/** Dueño con sus mascotas. */
+export interface OwnerWithPets extends Owner {
+  pets: Pet[];
+}
