@@ -1,14 +1,12 @@
-"use client";
+import { getOwnersWithPets, getOwnersList } from "@/lib/supabase/queries";
+import { ClientsView } from "@/components/clinica/ClientsView";
 
-import { PawPrint } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+export const dynamic = "force-dynamic";
 
-export default function ClientesPage() {
-  return (
-    <ComingSoon
-      icon={PawPrint}
-      title="Clientes y mascotas"
-      description="Fichas de cada mascota y su dueño, historial médico y visitas anteriores."
-    />
-  );
+export default async function ClientesPage() {
+  const [owners, ownersList] = await Promise.all([
+    getOwnersWithPets(),
+    getOwnersList(),
+  ]);
+  return <ClientsView owners={owners} ownersList={ownersList} />;
 }

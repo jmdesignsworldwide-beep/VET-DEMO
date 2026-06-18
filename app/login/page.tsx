@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Mail, Loader2, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { signInDemo } from "@/lib/supabase/actions";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Brand } from "@/components/layout/Brand";
@@ -112,14 +112,16 @@ export default function LoginPage() {
             <span className="h-px flex-1 bg-hairline/10" />
           </div>
 
-          {/* Acceso de revisión (mientras no existan cuentas) */}
-          <Link
-            href="/dashboard"
-            className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl glass text-sm font-medium transition-shadow hover:shadow-glow"
-          >
-            Entrar a la demo
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          {/* Acceso de revisión: inicia sesión real como usuario demo */}
+          <form action={signInDemo}>
+            <button
+              type="submit"
+              className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl glass text-sm font-medium transition-shadow hover:shadow-glow"
+            >
+              Entrar a la demo
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
         </div>
       </motion.div>
     </div>
