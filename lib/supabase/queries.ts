@@ -16,6 +16,11 @@ import type {
   Stay,
   StayFull,
   DailyReport,
+  GroomingAppointmentFull,
+  GroomingService,
+  GroomingPreferences,
+  GroomingPhoto,
+  GroomingPhotoFull,
 } from "@/lib/types";
 
 /** Dueños con sus mascotas (búsqueda opcional por nombre/cédula/teléfono). */
@@ -73,6 +78,9 @@ export interface PetFull extends PetWithOwner {
   photos: PetPhoto[];
   events: PetEvent[];
   stays: (Stay & { room: Room })[];
+  groomingServices: GroomingService[];
+  groomingPhotos: GroomingPhoto[];
+  groomingPref: GroomingPreferences | null;
 }
 
 /** Ficha completa de una mascota (todo lo que cuelga de ella). */
@@ -85,7 +93,7 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
     .single();
   if (!pet) return null;
 
-  const [records, vaccinations, hospitalizations, prescriptions, photos, events, stays] =
+  const [records, vaccinations, hospitalizations, prescriptions, photos, events, stays, gServices, gPhotos, gPref] =
     await Promise.all([
       supabase.from("medical_records").select("*").eq("pet_id", id).order("occurred_at", { ascending: false }),
       supabase.from("vaccinations").select("*").eq("pet_id", id).order("applied_at", { ascending: false }),
@@ -94,6 +102,9 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
       supabase.from("pet_photos").select("*").eq("pet_id", id).order("taken_at", { ascending: false }),
       supabase.from("pet_events").select("*").eq("pet_id", id).order("occurred_at", { ascending: false }),
       supabase.from("stays").select("*, room:rooms(*)").eq("pet_id", id).order("check_in", { ascending: false }),
+      supabase.from("grooming_services").select("*").eq("pet_id", id).order("performed_at", { ascending: false }),
+      supabase.from("grooming_photos").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
+      supabase.from("grooming_preferences").select("*").eq("pet_id", id).maybeSingle(),
     ]);
 
   return {
@@ -105,6 +116,34 @@ export async function getPetFull(id: string): Promise<PetFull | null> {
     photos: (photos.data as PetPhoto[]) ?? [],
     events: (events.data as PetEvent[]) ?? [],
     stays: (stays.data as (Stay & { room: Room })[]) ?? [],
+    groomingServices: (gServices.data as GroomingService[]) ?? [],
+    groomingPhotos: (gPhotos.data as GroomingPhoto[]) ?? [],
+    groomingPref: (gPref.data as GroomingPreferences) ?? null,
+  };
+}
+
+// ───────────────────────── Peluquería ─────────────────────────
+
+export interface GroomingData {
+  appointments: GroomingAppointmentFull[];
+  photos: GroomingPhotoFull[];
+}
+
+export async function getGroomingData(): Promise<GroomingData> {
+  const supabase = await createClient();
+  const [appointments, photos] = await Promise.all([
+    supabase
+      .from("grooming_appointments")
+      .select("*, pet:pets(*, owner:owners(*))")
+      .order("scheduled_at", { ascending: true }),
+    supabase
+      .from("grooming_photos")
+      .select("*, pet:pets(*, owner:owners(*))")
+      .order("created_at", { ascending: false }),
+  ]);
+  return {
+    appointments: (appointments.data as GroomingAppointmentFull[]) ?? [],
+    photos: (photos.data as GroomingPhotoFull[]) ?? [],
   };
 }
 
@@ -228,7 +267,7 @@ export async function getDashboardLive() {
   end.setDate(end.getDate() + 1);
   const today = todayISODate();
 
-  const [hosp, todayAppts, revenueRows, guests] = await Promise.all([
+  const [hosp, todayAppts, revenueRows, guests, guestsGrooming] = await Promise.all([
     supabase
       .from("hospitalizations")
       .select("pet:pets(name)")
@@ -250,7 +289,14 @@ export async function getDashboardLive() {
       .lte("check_in", today)
       .gt("check_out", today)
       .neq("status", "cancelada"),
+    supabase
+      .from("grooming_appointments")
+      .select("status")
+      .gte("scheduled_at", start.toISOString())
+      .lt("scheduled_at", end.toISOString()),
   ]);
+
+  const groomingRows = (guestsGrooming.data as { status: string }[] | null) ?? [];
 
   const hospNames =
     (hosp.data as { pet: { name: string } | null }[] | null)?.map(
@@ -272,6 +318,8 @@ export async function getDashboardLive() {
     hospitalizedNames: hospNames,
     hotelGuestCount: guestNames.length,
     hotelGuestNames: guestNames,
+    groomingTodayCount: groomingRows.length,
+    groomingInProgress: groomingRows.filter((g) => g.status === "en_proceso").length,
     todayCount: appts.length,
     nextAppointment: appts.find(
       (a) => new Date(a.scheduled_at).getTime() > Date.now(),

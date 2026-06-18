@@ -5,9 +5,11 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, Stethoscope, Syringe, HeartPulse, FileText,
-  Images, User, ChevronDown, FileDown, AlertTriangle, BedDouble,
+  Images, User, ChevronDown, FileDown, AlertTriangle, BedDouble, Scissors, Sparkles,
 } from "lucide-react";
 import { nights } from "@/lib/hotel";
+import { BeforeAfterSlider } from "@/components/grooming/BeforeAfterSlider";
+import { GroomingPhotoUpload } from "@/components/grooming/GroomingPhotoUpload";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
 import { Timeline } from "./Timeline";
 import { EditPetButton } from "./PetForm";
@@ -27,6 +29,7 @@ const TABS = [
   { key: "vacunas", label: "Vacunas", icon: Syringe },
   { key: "hospital", label: "Hospitalización", icon: HeartPulse },
   { key: "hotel", label: "Estadías", icon: BedDouble },
+  { key: "peluqueria", label: "Peluquería", icon: Scissors },
   { key: "recetas", label: "Recetas", icon: FileText },
   { key: "fotos", label: "Fotos", icon: Images },
 ] as const;
@@ -111,6 +114,7 @@ export function PetFicha({ pet }: { pet: PetFull }) {
             {tab === "vacunas" && <Vacunas pet={pet} />}
             {tab === "hospital" && <Hospital pet={pet} />}
             {tab === "hotel" && <Estadias pet={pet} />}
+            {tab === "peluqueria" && <Peluqueria pet={pet} />}
             {tab === "recetas" && <Recetas pet={pet} />}
             {tab === "fotos" && <Fotos pet={pet} />}
           </motion.div>
@@ -252,6 +256,79 @@ function Estadias({ pet }: { pet: PetFull }) {
           </div>
         </GlassCard>
       ))}
+    </div>
+  );
+}
+
+function Peluqueria({ pet }: { pet: PetFull }) {
+  const pref = pet.groomingPref;
+  return (
+    <div className="space-y-5">
+      {/* Preferencias de corte */}
+      <GlassCard>
+        <div className="mb-3 flex items-center gap-2">
+          <Scissors className="h-4 w-4 text-brand dark:text-brand-glow" />
+          <h3 className="font-display font-semibold">Preferencias de corte</h3>
+        </div>
+        {pref ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Stat label="Tipo de corte" value={pref.cut_type ?? "—"} />
+            <Stat label="Productos" value={pref.products ?? "—"} />
+            <Stat label="Frecuencia" value={pref.frequency_weeks ? `${pref.frequency_weeks} semanas` : "—"} />
+            <Stat label="Groomer" value={pref.groomer_pref ?? "—"} />
+            <div className="col-span-2 rounded-2xl bg-ink/[0.03] p-4">
+              <p className="text-xs uppercase tracking-wider text-muted">Notas del groomer</p>
+              <p className="mt-1 font-semibold">{pref.notes ?? "—"}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">Sin preferencias registradas.</p>
+        )}
+      </GlassCard>
+
+      {/* Antes / Después */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-accent" />
+          <h3 className="font-display font-semibold">Transformaciones</h3>
+        </div>
+        <GroomingPhotoUpload petId={pet.id} label="Subir antes/después" />
+      </div>
+      {pet.groomingPhotos.length === 0 ? (
+        <Empty text="Aún no hay fotos antes/después. Sube la primera." />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {pet.groomingPhotos.map((p) => (
+            <GlassCard key={p.id}>
+              <BeforeAfterSlider before={p.before_path} after={p.after_path} alt={pet.name} />
+              {(p.service_label || p.caption) && (
+                <p className="mt-3 text-center text-sm text-muted">{p.service_label}{p.caption ? ` · ${p.caption}` : ""}</p>
+              )}
+            </GlassCard>
+          ))}
+        </div>
+      )}
+
+      {/* Historial de servicios */}
+      {pet.groomingServices.length > 0 && (
+        <div>
+          <h3 className="mb-3 font-display font-semibold">Historial de servicios</h3>
+          <div className="space-y-3">
+            {pet.groomingServices.map((s) => (
+              <GlassCard key={s.id} className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand dark:text-brand-glow">
+                  <Scissors className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{s.service}</p>
+                  <p className="text-xs text-muted">{fmtDate(s.performed_at)} · {s.groomer ?? "—"}</p>
+                </div>
+                {s.price != null && <span className="text-sm font-semibold tabular-nums text-brand dark:text-brand-glow">{rd(s.price)}</span>}
+              </GlassCard>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

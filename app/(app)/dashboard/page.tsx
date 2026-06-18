@@ -21,6 +21,8 @@ export default async function DashboardPage() {
         hospitalizedNames: live.hospitalizedNames,
         hotelGuestCount: live.hotelGuestCount,
         hotelGuestNames: live.hotelGuestNames,
+        groomingTodayCount: live.groomingTodayCount,
+        groomingInProgress: live.groomingInProgress,
         todayCount: live.todayCount,
         nextAppointment: live.nextAppointment,
         revenueToday: live.revenueToday,

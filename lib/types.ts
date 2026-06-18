@@ -179,3 +179,56 @@ export interface DailyReport {
   photo_path: string | null;
   created_at: string;
 }
+
+// ───────────────────────── Peluquería ─────────────────────────
+
+export interface GroomingAppointment {
+  id: string;
+  pet_id: string;
+  scheduled_at: string;
+  service: string;
+  groomer: string | null;
+  status: "programada" | "en_proceso" | "completada" | "cancelada";
+  price: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface GroomingAppointmentFull extends GroomingAppointment {
+  pet: PetWithOwner;
+}
+
+export interface GroomingService {
+  id: string;
+  pet_id: string;
+  service: string;
+  groomer: string | null;
+  price: number | null;
+  notes: string | null;
+  performed_at: string;
+  created_at: string;
+}
+
+export interface GroomingPreferences {
+  pet_id: string;
+  cut_type: string | null;
+  products: string | null;
+  frequency_weeks: number | null;
+  groomer_pref: string | null;
+  notes: string | null;
+  updated_at: string;
+}
+
+export interface GroomingPhoto {
+  id: string;
+  pet_id: string;
+  service_label: string | null;
+  before_path: string;
+  after_path: string;
+  caption: string | null;
+  created_at: string;
+}
+
+export interface GroomingPhotoFull extends GroomingPhoto {
+  pet: PetWithOwner;
+}

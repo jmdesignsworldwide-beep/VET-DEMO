@@ -76,3 +76,8 @@ export function publicPhotoUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return `${base}/storage/v1/object/public/pet-photos/${path}`;
 }
+
+/** Resuelve una imagen que puede ser URL absoluta (semilla) o ruta de Storage. */
+export function imgUrl(path: string): string {
+  return path.startsWith("http") ? path : publicPhotoUrl(path);
+}
