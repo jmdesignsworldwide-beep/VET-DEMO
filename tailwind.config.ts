@@ -55,8 +55,8 @@ const config: Config = {
           "50%": { transform: "translate(-6%, -10%) scale(1)" },
         },
         breathe: {
-          "0%, 100%": { opacity: "0.55", filter: "blur(70px)" },
-          "50%": { opacity: "0.85", filter: "blur(90px)" },
+          "0%, 100%": { opacity: "0.55" },
+          "50%": { opacity: "0.85" },
         },
         "pulse-ring": {
           "0%": { transform: "scale(0.85)", opacity: "0.7" },

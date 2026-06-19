@@ -138,3 +138,16 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   RENDIMIENTO EN MÓVIL (pantallas táctiles)
+   El fondo aurora queda estático: nada de animaciones continuas
+   que saturen el GPU del teléfono y bloqueen los toques.
+   ───────────────────────────────────────────────────────────── */
+@media (pointer: coarse) {
+  .animate-aurora-one,
+  .animate-aurora-two,
+  .animate-breathe {
+    animation: none !important;
+  }
+}
