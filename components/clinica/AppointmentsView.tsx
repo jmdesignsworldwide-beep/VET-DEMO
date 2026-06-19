@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CalendarHeart, Clock, Search, X } from "lucide-react";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { DetailModal } from "@/components/shared/DetailModal";
 import { Input } from "@/components/ui/Form";
 import { NewAppointmentButton } from "./AppointmentForm";
-import { fmtTime, rd } from "@/lib/format";
+import { fmtTime, fmtDateTime, rd } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPet } from "@/lib/supabase/queries";
 import type { PetWithOwner } from "@/lib/types";
@@ -51,6 +51,7 @@ export function AppointmentsView({
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [sel, setSel] = useState<AppointmentWithPet | null>(null);
 
   const term = q.trim().toLowerCase();
   const isToday = from === todayStr() && to === todayStr();
@@ -175,7 +176,7 @@ export function AppointmentsView({
                   exit={reduce ? undefined : { opacity: 0, scale: 0.96 }}
                   transition={{ type: "spring", stiffness: 320, damping: 30 }}
                 >
-                  <Link href={`/mascotas/${row.a.pet_id}`}>
+                  <button type="button" onClick={() => setSel(row.a)} className="w-full text-left">
                     <GlassCard className="flex items-center gap-4 transition-shadow hover:shadow-glow">
                       <span className="flex w-16 shrink-0 flex-col items-center">
                         <Clock className="h-4 w-4 text-muted" />
@@ -191,13 +192,32 @@ export function AppointmentsView({
                         <span className={cn("text-xs font-medium", row.a.status === "programada" ? "text-accent" : "text-muted")}>{row.a.status}</span>
                       </div>
                     </GlassCard>
-                  </Link>
+                  </button>
                 </motion.div>
               ),
             )}
           </AnimatePresence>
         </motion.div>
       )}
+
+      <DetailModal
+        open={!!sel}
+        onClose={() => setSel(null)}
+        title={sel ? `${sel.pet?.name} · ${sel.reason}` : ""}
+        subtitle="Detalle de la cita"
+        avatarName={sel?.pet?.name}
+        badge={sel?.status}
+        badgeTone={sel?.status === "programada" ? "accent" : "muted"}
+        fields={sel ? [
+          { label: "Fecha y hora", value: fmtDateTime(sel.scheduled_at) },
+          { label: "Motivo", value: sel.reason },
+          { label: "Veterinario", value: sel.vet_name ?? "—" },
+          { label: "Precio", value: rd(sel.price), accent: true },
+          { label: "Dueño", value: sel.pet?.owner?.full_name ?? "—", full: true },
+        ] : []}
+        href={sel ? `/mascotas/${sel.pet_id}` : undefined}
+        hrefLabel={sel ? `Ver ficha de ${sel.pet?.name}` : undefined}
+      />
     </div>
   );
 }

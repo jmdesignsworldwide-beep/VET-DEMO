@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { BedDouble, DoorOpen, CalendarClock, History, PawPrint, ArrowUpRight } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
@@ -10,6 +9,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Magnetic } from "@/components/motion/Magnetic";
 import { PulseDot } from "@/components/motion/PulseDot";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
+import { DetailModal } from "@/components/shared/DetailModal";
 import { NewStayButton } from "./NewStayButton";
 import { StayActions } from "./StayActions";
 import { PostcardButton } from "./Postcard";
@@ -37,6 +37,7 @@ export function HotelView({
   pets: PetWithOwner[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("huespedes");
+  const [sel, setSel] = useState<StayFull | null>(null);
   const today = hotelToday();
 
   const active = useMemo(() => stays.filter(stayActiveToday), [stays]);
@@ -96,16 +97,16 @@ export function HotelView({
               {active.map((s) => (
                 <Reveal key={s.id}>
                   <GlassCard glow className="h-full">
-                    <div className="flex items-start gap-3">
+                    <button type="button" onClick={() => setSel(s)} className="flex w-full items-start gap-3 text-left">
                       <PetAvatar name={s.pet?.name ?? "?"} size={52} />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/mascotas/${s.pet_id}`} className="font-display text-lg font-semibold hover:text-brand dark:hover:text-brand-glow">{s.pet?.name}</Link>
+                        <p className="font-display text-lg font-semibold">{s.pet?.name}</p>
                         <p className="text-xs text-muted">{s.pet?.owner?.full_name}</p>
                         <p className="mt-1 text-sm"><span className="font-medium">{s.room?.name}</span> · {s.room?.type}</p>
                         <p className="text-xs text-muted">{fmtDate(s.check_in)} → {fmtDate(s.check_out)} · {nights(s.check_in, s.check_out)} noche(s)</p>
                       </div>
                       <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-semibold text-accent">En curso</span>
-                    </div>
+                    </button>
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       {reportByStay[s.id] && (
                         <PostcardButton report={reportByStay[s.id]} petName={s.pet?.name ?? ""} ownerName={s.pet?.owner?.full_name ?? "su familia"} />
@@ -138,14 +139,14 @@ export function HotelView({
                         <p className="mt-3 font-display text-lg font-semibold">{r.name}</p>
                         <p className="text-xs text-muted">{r.type} · cap. {r.capacity} · {rd(r.price_per_night)}/noche</p>
                         {occ ? (
-                          <Link href={`/mascotas/${occ.pet_id}`} className="mt-3 flex items-center gap-2 rounded-xl bg-ink/[0.04] p-2 transition-colors hover:bg-ink/[0.08]">
+                          <button type="button" onClick={() => setSel(occ)} className="mt-3 flex w-full items-center gap-2 rounded-xl bg-ink/[0.04] p-2 text-left transition-colors hover:bg-ink/[0.08]">
                             <PetAvatar name={occ.pet?.name ?? "?"} size={30} ring={false} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-medium">{occ.pet?.name}</p>
                               <p className="truncate text-[11px] text-muted">{fmtDate(occ.check_in)} → {fmtDate(occ.check_out)}</p>
                             </div>
                             <ArrowUpRight className="h-4 w-4 text-muted" />
-                          </Link>
+                          </button>
                         ) : (
                           <p className="mt-3 rounded-xl bg-ink/[0.03] p-2 text-center text-xs text-muted">Disponible para reservar</p>
                         )}
@@ -163,11 +164,13 @@ export function HotelView({
               {upcoming.map((s) => (
                 <Reveal key={s.id}>
                   <GlassCard className="flex items-center gap-4">
-                    <PetAvatar name={s.pet?.name ?? "?"} size={44} />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold">{s.pet?.name} · {s.room?.name}</p>
-                      <p className="text-xs text-muted">{fmtDate(s.check_in)} → {fmtDate(s.check_out)} · {nights(s.check_in, s.check_out)} noche(s)</p>
-                    </div>
+                    <button type="button" onClick={() => setSel(s)} className="flex min-w-0 flex-1 items-center gap-4 text-left">
+                      <PetAvatar name={s.pet?.name ?? "?"} size={44} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{s.pet?.name} · {s.room?.name}</p>
+                        <p className="text-xs text-muted">{fmtDate(s.check_in)} → {fmtDate(s.check_out)} · {nights(s.check_in, s.check_out)} noche(s)</p>
+                      </div>
+                    </button>
                     <StayActions stayId={s.id} petId={s.pet_id} status={s.status} />
                   </GlassCard>
                 </Reveal>
@@ -180,7 +183,7 @@ export function HotelView({
             <Stagger className="space-y-3">
               {history.map((s) => (
                 <Reveal key={s.id}>
-                  <Link href={`/mascotas/${s.pet_id}`}>
+                  <button type="button" onClick={() => setSel(s)} className="w-full text-left">
                     <GlassCard className="flex items-center gap-4 opacity-90 transition-opacity hover:opacity-100">
                       <PetAvatar name={s.pet?.name ?? "?"} size={40} />
                       <div className="min-w-0 flex-1">
@@ -189,13 +192,34 @@ export function HotelView({
                       </div>
                       <span className="text-sm font-semibold text-muted tabular-nums">{rd(nights(s.check_in, s.check_out) * s.price_per_night)}</span>
                     </GlassCard>
-                  </Link>
+                  </button>
                 </Reveal>
               ))}
             </Stagger>
           )}
         </motion.div>
       </AnimatePresence>
+
+      <DetailModal
+        open={!!sel}
+        onClose={() => setSel(null)}
+        title={sel ? `${sel.pet?.name} · ${sel.room?.name}` : ""}
+        subtitle="Detalle de la estadía"
+        avatarName={sel?.pet?.name}
+        badge={sel?.status}
+        badgeTone={sel?.status === "en_curso" ? "accent" : sel?.status === "reservada" ? "brand" : "muted"}
+        fields={sel ? [
+          { label: "Habitación", value: `${sel.room?.name} · ${sel.room?.type}` },
+          { label: "Noches", value: String(nights(sel.check_in, sel.check_out)) },
+          { label: "Entrada", value: fmtDate(sel.check_in) },
+          { label: "Salida", value: fmtDate(sel.check_out) },
+          { label: "Total", value: rd(nights(sel.check_in, sel.check_out) * sel.price_per_night), accent: true },
+          { label: "Dueño", value: sel.pet?.owner?.full_name ?? "—" },
+        ] : []}
+        note={sel?.notes ?? undefined}
+        href={sel ? `/mascotas/${sel.pet_id}` : undefined}
+        hrefLabel={sel ? `Ver ficha de ${sel.pet?.name}` : undefined}
+      />
     </div>
   );
 }

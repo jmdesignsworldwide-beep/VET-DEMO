@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Boxes, ReceiptText, Users, BarChart3, ServerCog, ArrowUpRight } from "lucide-react";
-import { getFinance } from "@/lib/supabase/queries";
+import { getFinance, getInvoices } from "@/lib/supabase/queries";
 import { FinanceView } from "@/components/admin/FinanceView";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Magnetic } from "@/components/motion/Magnetic";
@@ -17,8 +17,8 @@ const SECTIONS = [
 ];
 
 export default async function AdminPage() {
-  const [hoy, semana, mes] = await Promise.all([
-    getFinance("hoy"), getFinance("semana"), getFinance("mes"),
+  const [hoy, semana, mes, invoices] = await Promise.all([
+    getFinance("hoy"), getFinance("semana"), getFinance("mes"), getInvoices(),
   ]);
 
   return (
@@ -30,7 +30,7 @@ export default async function AdminPage() {
         <p className="mt-1 text-sm text-muted">Finanzas, inventario, equipo y sistema de Clínica Nido</p>
       </div>
 
-      <FinanceView data={{ hoy, semana, mes }} />
+      <FinanceView data={{ hoy, semana, mes }} invoices={invoices} />
 
       <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Módulos</h2>
       <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

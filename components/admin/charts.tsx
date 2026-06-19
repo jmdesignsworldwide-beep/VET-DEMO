@@ -43,7 +43,7 @@ const axisProps = {
 };
 
 /** Ingresos por área (barras). */
-export function AreaRevenueBars({ data }: { data: { area: string; ingresos: number }[] }) {
+export function AreaRevenueBars({ data, onBarClick }: { data: { area: string; ingresos: number }[]; onBarClick?: (area: string) => void }) {
   const reduce = useReducedMotion();
   return (
     <div className="h-64 w-full text-muted">
@@ -53,7 +53,8 @@ export function AreaRevenueBars({ data }: { data: { area: string; ingresos: numb
           <XAxis dataKey="area" {...axisProps} />
           <YAxis {...axisProps} tickFormatter={kfmt} width={40} />
           <Tooltip content={<ChartTooltip />} cursor={{ fill: "currentColor", fillOpacity: 0.05 }} />
-          <Bar dataKey="ingresos" name="ingresos" radius={[8, 8, 0, 0]} isAnimationActive={!reduce} animationDuration={900}>
+          <Bar dataKey="ingresos" name="ingresos" radius={[8, 8, 0, 0]} isAnimationActive={!reduce} animationDuration={900}
+            onClick={(d: any) => onBarClick?.(d?.area)} cursor={onBarClick ? "pointer" : undefined}>
             {data.map((d) => <Cell key={d.area} fill={AREA_COLORS[d.area] ?? BRAND} />)}
           </Bar>
         </BarChart>
