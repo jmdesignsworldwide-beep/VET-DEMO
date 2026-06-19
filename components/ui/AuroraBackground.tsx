@@ -14,7 +14,7 @@ export function AuroraBackground() {
 
       {/* Mancha turquesa */}
       <div
-        className="absolute -left-[10%] top-[-15%] h-[55vmax] w-[55vmax] animate-aurora-one rounded-full animate-breathe"
+        className="absolute -left-[10%] top-[-15%] h-[55vmax] w-[55vmax] animate-aurora-one rounded-full animate-breathe blur-[80px]"
         style={{
           background:
             "radial-gradient(circle at center, rgb(var(--aurora-a) / var(--aurora-opacity)) 0%, transparent 60%)",
@@ -22,7 +22,7 @@ export function AuroraBackground() {
       />
       {/* Mancha coral */}
       <div
-        className="absolute -right-[15%] top-[10%] h-[50vmax] w-[50vmax] animate-aurora-two rounded-full animate-breathe"
+        className="absolute -right-[15%] top-[10%] h-[50vmax] w-[50vmax] animate-aurora-two rounded-full animate-breathe blur-[80px]"
         style={{
           background:
             "radial-gradient(circle at center, rgb(var(--aurora-b) / var(--aurora-opacity)) 0%, transparent 60%)",
@@ -30,7 +30,7 @@ export function AuroraBackground() {
       />
       {/* Halo inferior tenue */}
       <div
-        className="absolute bottom-[-25%] left-1/2 h-[45vmax] w-[70vmax] -translate-x-1/2 animate-breathe rounded-full"
+        className="absolute bottom-[-25%] left-1/2 h-[45vmax] w-[70vmax] -translate-x-1/2 animate-breathe rounded-full blur-[80px]"
         style={{
           background:
             "radial-gradient(circle at center, rgb(var(--aurora-a) / calc(var(--aurora-opacity) * 0.6)) 0%, transparent 65%)",
