@@ -104,7 +104,7 @@ export function WelcomeOverlay({ name }: { name: string }) {
       >
         <div className="relative flex flex-col items-center text-center">
           {/* Logo con anillos + glow */}
-          <div className="relative mb-9 grid h-24 w-24 place-items-center">
+          <div className="relative mb-14 grid h-24 w-24 place-items-center sm:mb-16">
             <span className="absolute h-28 w-28 rounded-full bg-brand/25 blur-2xl animate-breathe" />
             {!reduce && (
               <>
