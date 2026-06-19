@@ -1,6 +1,7 @@
 import { BarChart3 } from "lucide-react";
 import { getReports } from "@/lib/supabase/queries";
-import { AreaRevenueBars, TopServicesBars } from "@/components/admin/charts";
+import { AreaRevenueBars } from "@/components/admin/charts";
+import { TopServicesList } from "@/components/admin/TopServicesList";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { rd } from "@/lib/format";
@@ -36,8 +37,8 @@ export default async function ReportesPage() {
         </GlassCard>
         <GlassCard>
           <h3 className="mb-1 font-display font-semibold">Servicios más solicitados</h3>
-          <p className="mb-3 text-xs text-muted">Por número de solicitudes</p>
-          <TopServicesBars data={topServices} />
+          <p className="mb-3 text-xs text-muted">Toca un servicio para ver el detalle</p>
+          <TopServicesList data={topServices} />
         </GlassCard>
       </div>
     </div>

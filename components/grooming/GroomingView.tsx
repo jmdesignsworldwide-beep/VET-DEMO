@@ -7,6 +7,7 @@ import { Scissors, Search, Clock, Sparkles, Bell, MessageCircle, AlertTriangle }
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { CountUp } from "@/components/motion/CountUp";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { DetailModal } from "@/components/shared/DetailModal";
 import { Input } from "@/components/ui/Form";
 import { PulseDot } from "@/components/motion/PulseDot";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
@@ -38,6 +39,7 @@ export function GroomingView({
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("agenda");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<(typeof STATUS)[number]>("todas");
+  const [sel, setSel] = useState<GroomingAppointmentFull | null>(null);
 
   const todayKey = new Date().toDateString();
   const todayCount = appointments.filter((a) => new Date(a.scheduled_at).toDateString() === todayKey).length;
@@ -114,7 +116,7 @@ export function GroomingView({
                       <motion.div key={a.id} layout={!reduce}
                         initial={reduce ? false : { opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={reduce ? undefined : { opacity: 0, scale: 0.96 }}
                         transition={{ type: "spring", stiffness: 320, damping: 30 }}>
-                        <Link href={`/mascotas/${a.pet_id}`}>
+                        <button type="button" onClick={() => setSel(a)} className="w-full text-left">
                           <GlassCard className="flex items-center gap-4 transition-shadow hover:shadow-glow">
                             <span className="flex w-16 shrink-0 flex-col items-center">
                               <Clock className="h-4 w-4 text-muted" />
@@ -131,7 +133,7 @@ export function GroomingView({
                               <span className={cn("text-xs font-medium capitalize", a.status === "en_proceso" ? "text-accent" : a.status === "completada" ? "text-muted" : "text-brand dark:text-brand-glow")}>{a.status.replace("_", " ")}</span>
                             </div>
                           </GlassCard>
-                        </Link>
+                        </button>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -192,6 +194,25 @@ export function GroomingView({
           )}
         </motion.div>
       </AnimatePresence>
+
+      <DetailModal
+        open={!!sel}
+        onClose={() => setSel(null)}
+        title={sel ? `${sel.pet?.name} · ${sel.service}` : ""}
+        subtitle="Detalle de la cita de peluquería"
+        avatarName={sel?.pet?.name}
+        badge={sel?.status}
+        badgeTone={sel?.status === "en_proceso" ? "accent" : sel?.status === "completada" ? "muted" : "brand"}
+        fields={sel ? [
+          { label: "Fecha y hora", value: fmtDateTime(sel.scheduled_at) },
+          { label: "Servicio", value: sel.service },
+          { label: "Groomer", value: sel.groomer ?? "—" },
+          { label: "Precio", value: rd(sel.price), accent: true },
+          { label: "Dueño", value: sel.pet?.owner?.full_name ?? "—", full: true },
+        ] : []}
+        href={sel ? `/mascotas/${sel.pet_id}` : undefined}
+        hrefLabel={sel ? `Ver ficha de ${sel.pet?.name}` : undefined}
+      />
     </div>
   );
 }

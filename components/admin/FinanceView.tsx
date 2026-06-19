@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Wallet, TrendingDown, Scale, ReceiptText } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { CountUp } from "@/components/motion/CountUp";
+import { DetailModal } from "@/components/shared/DetailModal";
 import { AreaRevenueBars, IncomeExpenseArea } from "./charts";
+import { rd, fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FinanceData, FinancePeriod } from "@/lib/supabase/queries";
+import type { Invoice } from "@/lib/types";
 
 const PERIODS: { key: FinancePeriod; label: string }[] = [
   { key: "hoy", label: "Hoy" },
@@ -21,9 +24,27 @@ const AREA_DOT: Record<string, string> = {
   "Peluquería": "bg-brand-glow",
 };
 
-export function FinanceView({ data }: { data: Record<FinancePeriod, FinanceData> }) {
+function periodStart(period: FinancePeriod): Date {
+  const s = new Date();
+  s.setHours(0, 0, 0, 0);
+  if (period === "semana") s.setDate(s.getDate() - 6);
+  else if (period === "mes") s.setDate(s.getDate() - 29);
+  return s;
+}
+
+export function FinanceView({ data, invoices }: { data: Record<FinancePeriod, FinanceData>; invoices: Invoice[] }) {
   const [period, setPeriod] = useState<FinancePeriod>("mes");
+  const [selArea, setSelArea] = useState<string | null>(null);
   const d = data[period];
+
+  const areaInvoices = useMemo(() => {
+    if (!selArea) return [];
+    const start = periodStart(period).getTime();
+    return invoices
+      .filter((i) => i.area === selArea && new Date(i.issued_at).getTime() >= start)
+      .sort((a, b) => +new Date(b.issued_at) - +new Date(a.issued_at));
+  }, [selArea, period, invoices]);
+  const areaTotal = areaInvoices.reduce((s, i) => s + Number(i.total), 0);
 
   return (
     <div>
@@ -45,7 +66,6 @@ export function FinanceView({ data }: { data: Record<FinancePeriod, FinanceData>
         </div>
       </div>
 
-      {/* KPIs */}
       <Stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Reveal><Kpi icon={Wallet} label="Ingresos" value={d.income} tone="brand" /></Reveal>
         <Reveal><Kpi icon={TrendingDown} label="Gastos" value={d.expense} tone="accent" /></Reveal>
@@ -53,18 +73,18 @@ export function FinanceView({ data }: { data: Record<FinancePeriod, FinanceData>
         <Reveal><Kpi icon={ReceiptText} label="Facturas" value={d.invoiceCount} tone="brand" money={false} /></Reveal>
       </Stagger>
 
-      {/* Gráficos */}
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
         <Reveal className="lg:col-span-2">
           <GlassCard className="h-full">
             <h3 className="mb-1 font-display font-semibold">Ingresos por área</h3>
-            <p className="mb-3 text-xs text-muted">De dónde viene cada peso</p>
-            <AreaRevenueBars data={d.byArea} />
-            <div className="mt-3 flex flex-wrap justify-center gap-4">
+            <p className="mb-3 text-xs text-muted">Toca un área para ver el desglose</p>
+            <AreaRevenueBars data={d.byArea} onBarClick={setSelArea} />
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
               {d.byArea.map((a) => (
-                <span key={a.area} className="flex items-center gap-1.5 text-xs text-muted">
+                <button key={a.area} onClick={() => setSelArea(a.area)}
+                  className="flex items-center gap-1.5 rounded-full bg-ink/[0.04] px-3 py-1 text-xs text-muted transition-colors hover:text-ink">
                   <span className={cn("h-2.5 w-2.5 rounded-full", AREA_DOT[a.area])} /> {a.area}
-                </span>
+                </button>
               ))}
             </div>
           </GlassCard>
@@ -77,6 +97,29 @@ export function FinanceView({ data }: { data: Record<FinancePeriod, FinanceData>
           </GlassCard>
         </Reveal>
       </div>
+
+      <DetailModal
+        open={!!selArea}
+        onClose={() => setSelArea(null)}
+        title={`Ingresos · ${selArea ?? ""}`}
+        subtitle={`${areaInvoices.length} facturas en el periodo`}
+        fields={[
+          { label: "Total del área", value: rd(areaTotal), accent: true },
+          { label: "Facturas", value: String(areaInvoices.length) },
+        ]}
+      >
+        <div className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">
+          {areaInvoices.slice(0, 30).map((i) => (
+            <div key={i.id} className="flex items-center justify-between gap-3 rounded-xl bg-ink/[0.03] px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <p className="truncate font-medium">{i.customer_name}</p>
+                <p className="truncate text-xs text-muted">{i.ncf} · {fmtDate(i.issued_at)}</p>
+              </div>
+              <span className="shrink-0 font-semibold tabular-nums text-brand dark:text-brand-glow">{rd(i.total)}</span>
+            </div>
+          ))}
+        </div>
+      </DetailModal>
     </div>
   );
 }

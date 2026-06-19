@@ -8,13 +8,14 @@ import {
 } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { DetailModal } from "@/components/shared/DetailModal";
 import { PulseDot } from "@/components/motion/PulseDot";
 import { LiveStat } from "./LiveStat";
 import { AreaCard } from "./AreaCard";
 import { AvatarStack, PetAvatar } from "./PetAvatar";
 import { DashboardSkeleton } from "./DashboardSkeleton";
 import { LiveClock } from "./LiveClock";
-import { rd, fmtTime, timeAgo, minutesUntil } from "@/lib/format";
+import { rd, fmtTime, fmtDateTime, timeAgo, minutesUntil } from "@/lib/format";
 import type { AreaSummary } from "@/lib/data/dashboard";
 import type { AppointmentWithPet, RecentEvent } from "@/lib/supabase/queries";
 
@@ -35,6 +36,7 @@ export interface DashboardData {
 export function SalaDeMando({ data }: { data: DashboardData }) {
   const reduce = useReducedMotion();
   const [loading, setLoading] = useState(true);
+  const [selAppt, setSelAppt] = useState<AppointmentWithPet | null>(null);
 
   useEffect(() => {
     if (reduce) return setLoading(false);
@@ -153,7 +155,7 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
             ) : (
               <ul className="divide-y divide-hairline/10">
                 {data.todayAppointments.map((c) => (
-                  <Link key={c.id} href={`/mascotas/${c.pet_id}`} className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors hover:bg-ink/[0.03]">
+                  <button key={c.id} type="button" onClick={() => setSelAppt(c)} className="group -mx-2 flex w-full items-center gap-4 rounded-xl px-2 py-3 text-left transition-colors hover:bg-ink/[0.03]">
                     <span className="w-14 shrink-0 font-display text-sm font-semibold tabular-nums text-brand dark:text-brand-glow">{fmtTime(c.scheduled_at)}</span>
                     <PetAvatar name={c.pet?.name ?? "?"} size={36} />
                     <div className="min-w-0 flex-1">
@@ -162,7 +164,7 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
                     </div>
                     {c.price != null && <span className="text-sm font-semibold tabular-nums text-brand dark:text-brand-glow">{rd(c.price)}</span>}
                     <ArrowUpRight className="h-4 w-4 text-muted opacity-0 transition-opacity group-hover:opacity-100" />
-                  </Link>
+                  </button>
                 ))}
               </ul>
             )}
@@ -194,6 +196,25 @@ export function SalaDeMando({ data }: { data: DashboardData }) {
           </GlassCard>
         </Reveal>
       </Stagger>
+
+      <DetailModal
+        open={!!selAppt}
+        onClose={() => setSelAppt(null)}
+        title={selAppt ? `${selAppt.pet?.name} · ${selAppt.reason}` : ""}
+        subtitle="Detalle de la cita"
+        avatarName={selAppt?.pet?.name}
+        badge={selAppt?.status}
+        badgeTone={selAppt?.status === "programada" ? "accent" : "muted"}
+        fields={selAppt ? [
+          { label: "Fecha y hora", value: fmtDateTime(selAppt.scheduled_at) },
+          { label: "Motivo", value: selAppt.reason },
+          { label: "Veterinario", value: selAppt.vet_name ?? "—" },
+          { label: "Precio", value: rd(selAppt.price), accent: true },
+          { label: "Dueño", value: selAppt.pet?.owner?.full_name ?? "—", full: true },
+        ] : []}
+        href={selAppt ? `/mascotas/${selAppt.pet_id}` : undefined}
+        hrefLabel={selAppt ? `Ver ficha de ${selAppt.pet?.name}` : undefined}
+      />
     </div>
   );
 }
