@@ -21,6 +21,13 @@ import type {
   GroomingPreferences,
   GroomingPhoto,
   GroomingPhotoFull,
+  Employee,
+  InventoryItem,
+  Expense,
+  Invoice,
+  WhatsAppLog,
+  AuditLog,
+  Backup,
 } from "@/lib/types";
 
 /** Dueños con sus mascotas (búsqueda opcional por nombre/cédula/teléfono). */
@@ -145,6 +152,145 @@ export async function getGroomingData(): Promise<GroomingData> {
     appointments: (appointments.data as GroomingAppointmentFull[]) ?? [],
     photos: (photos.data as GroomingPhotoFull[]) ?? [],
   };
+}
+
+// ───────────────────────── Administración ─────────────────────────
+
+export type FinancePeriod = "hoy" | "semana" | "mes";
+
+function periodRange(period: FinancePeriod) {
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (period === "semana") start.setDate(start.getDate() - 6);
+  else if (period === "mes") start.setDate(start.getDate() - 29);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+function localDay(d: Date) {
+  return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, "0")}-${`${d.getDate()}`.padStart(2, "0")}`;
+}
+
+export interface FinanceData {
+  income: number;
+  expense: number;
+  balance: number;
+  invoiceCount: number;
+  byArea: { area: string; ingresos: number }[];
+  series: { label: string; ingresos: number; gastos: number }[];
+}
+
+export async function getFinance(period: FinancePeriod): Promise<FinanceData> {
+  const supabase = await createClient();
+  const { start, end } = periodRange(period);
+
+  const [inv, exp] = await Promise.all([
+    supabase.from("invoices").select("area, total, issued_at").gte("issued_at", start.toISOString()).lte("issued_at", end.toISOString()),
+    supabase.from("expenses").select("amount, spent_on").gte("spent_on", localDay(start)).lte("spent_on", localDay(end)),
+  ]);
+
+  const invoices = (inv.data as { area: string; total: number; issued_at: string }[] | null) ?? [];
+  const expenses = (exp.data as { amount: number; spent_on: string }[] | null) ?? [];
+
+  const income = invoices.reduce((s, i) => s + Number(i.total), 0);
+  const expense = expenses.reduce((s, e) => s + Number(e.amount), 0);
+
+  const areaMap: Record<string, number> = { Clínica: 0, Hotel: 0, Peluquería: 0 };
+  for (const i of invoices) areaMap[i.area] = (areaMap[i.area] ?? 0) + Number(i.total);
+  const byArea = Object.entries(areaMap).map(([area, ingresos]) => ({ area, ingresos }));
+
+  // Serie diaria
+  const days: string[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) days.push(localDay(new Date(d)));
+  const incByDay: Record<string, number> = {};
+  const expByDay: Record<string, number> = {};
+  for (const i of invoices) {
+    const k = localDay(new Date(i.issued_at));
+    incByDay[k] = (incByDay[k] ?? 0) + Number(i.total);
+  }
+  for (const e of expenses) expByDay[e.spent_on] = (expByDay[e.spent_on] ?? 0) + Number(e.amount);
+  const series = days.map((k) => {
+    const dt = new Date(k + "T12:00:00");
+    return {
+      label: dt.toLocaleDateString("es-DO", { day: "2-digit", month: "short" }),
+      ingresos: Math.round(incByDay[k] ?? 0),
+      gastos: Math.round(expByDay[k] ?? 0),
+    };
+  });
+
+  return { income, expense, balance: income - expense, invoiceCount: invoices.length, byArea, series };
+}
+
+export async function getInvoices(): Promise<Invoice[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("invoices").select("*").order("issued_at", { ascending: false }).limit(60);
+  return (data as Invoice[]) ?? [];
+}
+
+export async function getInventory(): Promise<InventoryItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("inventory_items").select("*").order("category").order("name");
+  return (data as InventoryItem[]) ?? [];
+}
+
+export async function getEmployees(): Promise<Employee[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("employees").select("*").order("area").order("full_name");
+  return (data as Employee[]) ?? [];
+}
+
+export async function getEmployee(id: string): Promise<Employee | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("employees").select("*").eq("id", id).single();
+  return (data as Employee) ?? null;
+}
+
+export async function getWhatsappLog(): Promise<WhatsAppLog[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("whatsapp_log").select("*").order("sent_at", { ascending: false }).limit(40);
+  return (data as WhatsAppLog[]) ?? [];
+}
+
+export async function getAuditLog(): Promise<AuditLog[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(40);
+  return (data as AuditLog[]) ?? [];
+}
+
+export async function getBackups(): Promise<Backup[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("backups").select("*").order("created_at", { ascending: false }).limit(10);
+  return (data as Backup[]) ?? [];
+}
+
+export interface ReportsData {
+  byArea: { area: string; ingresos: number }[];
+  topServices: { name: string; count: number }[];
+}
+
+export async function getReports(): Promise<ReportsData> {
+  const supabase = await createClient();
+  const [inv, groom, appts] = await Promise.all([
+    supabase.from("invoices").select("area, total"),
+    supabase.from("grooming_appointments").select("service"),
+    supabase.from("appointments").select("reason"),
+  ]);
+  const areaMap: Record<string, number> = { Clínica: 0, Hotel: 0, Peluquería: 0 };
+  for (const i of (inv.data as { area: string; total: number }[] | null) ?? [])
+    areaMap[i.area] = (areaMap[i.area] ?? 0) + Number(i.total);
+  const byArea = Object.entries(areaMap).map(([area, ingresos]) => ({ area, ingresos }));
+
+  const counts: Record<string, number> = {};
+  for (const g of (groom.data as { service: string }[] | null) ?? []) counts[g.service] = (counts[g.service] ?? 0) + 1;
+  for (const a of (appts.data as { reason: string }[] | null) ?? []) counts[a.reason] = (counts[a.reason] ?? 0) + 1;
+  const topServices = Object.entries(counts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  return { byArea, topServices };
 }
 
 export interface AppointmentWithPet extends Appointment {
