@@ -6,6 +6,7 @@ import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { CountUp } from "@/components/motion/CountUp";
 import { DetailModal } from "@/components/shared/DetailModal";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { AreaRevenueBars, IncomeExpenseArea } from "./charts";
 import { rd, fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -119,6 +120,7 @@ export function FinanceView({ data, invoices }: { data: Record<FinancePeriod, Fi
             </div>
           ))}
         </div>
+        <Disclaimer variant="ncf" className="mt-4" />
       </DetailModal>
     </div>
   );

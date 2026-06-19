@@ -5,8 +5,9 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, Stethoscope, Syringe, HeartPulse, FileText,
-  Images, User, ChevronDown, FileDown, AlertTriangle, BedDouble, Scissors, Sparkles,
+  Images, User, ChevronDown, FileDown, BedDouble, Scissors, Sparkles,
 } from "lucide-react";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { nights } from "@/lib/hotel";
 import { BeforeAfterSlider } from "@/components/grooming/BeforeAfterSlider";
 import { GroomingPhotoUpload } from "@/components/grooming/GroomingPhotoUpload";
@@ -187,6 +188,7 @@ function Historia({ pet }: { pet: PetFull }) {
           </GlassCard>
         );
       })}
+      <Disclaimer variant="pdf" inline className="pt-2" />
     </div>
   );
 }
@@ -356,10 +358,7 @@ function Recetas({ pet }: { pet: PetFull }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        Documento de ejemplo generado para demostración. No constituye documento veterinario válido.
-      </div>
+      <Disclaimer variant="pdf" />
       {pet.prescriptions.map((p) => (
         <GlassCard key={p.id}>
           <div className="flex items-center justify-between gap-3">
