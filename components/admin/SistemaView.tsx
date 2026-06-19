@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ServerCog, CloudUpload, MessageCircle, ScrollText, ShieldCheck,
-  Check, X, AlertTriangle, RefreshCw, Database,
+  Check, X, RefreshCw, Database,
 } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { Button } from "@/components/ui/Button";
 import { PulseDot } from "@/components/motion/PulseDot";
 import { forceBackup } from "@/lib/supabase/actions";
@@ -98,7 +99,7 @@ export function SistemaView({ backups, whatsapp, audit }: { backups: Backup[]; w
 
           {tab === "whatsapp" && (
             <>
-              <Disclaimer text="Mensajes simulados para demostración. Sin integración real de WhatsApp." />
+              <Disclaimer variant="whatsapp" className="mb-4" />
               <Stagger className="space-y-3">
                 {whatsapp.map((m) => (
                   <Reveal key={m.id}>
@@ -168,14 +169,6 @@ export function SistemaView({ backups, whatsapp, audit }: { backups: Backup[]; w
           )}
         </motion.div>
       </AnimatePresence>
-    </div>
-  );
-}
-
-function Disclaimer({ text }: { text: string }) {
-  return (
-    <div className="mb-4 flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {text}
     </div>
   );
 }

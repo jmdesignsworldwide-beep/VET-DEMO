@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ReceiptText, Search, AlertTriangle } from "lucide-react";
+import { ReceiptText, Search } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Modal } from "@/components/ui/Modal";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { Input } from "@/components/ui/Form";
 import { rd, fmtDateTime, fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -29,10 +30,7 @@ export function InvoicesView({ invoices }: { invoices: Invoice[] }) {
         </div>
       </div>
 
-      <div className="mb-4 flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        NCF simulado para demostración. No certificado ante la DGII.
-      </div>
+      <Disclaimer variant="ncf" className="mb-4" />
 
       <div className="relative mb-5">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -90,10 +88,7 @@ export function InvoicesView({ invoices }: { invoices: Invoice[] }) {
               <Row label="Total" value={rd(sel.total)} bold />
             </div>
 
-            <div className="flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-xs text-accent">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              NCF simulado para demostración. No certificado ante la DGII.
-            </div>
+            <Disclaimer variant="ncf" />
           </div>
         )}
       </Modal>

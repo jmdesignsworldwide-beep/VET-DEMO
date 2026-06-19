@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Send, Heart, PawPrint, AlertTriangle, Mail } from "lucide-react";
+import { X, Check, Send, Heart, PawPrint, Mail } from "lucide-react";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { fmtDate, publicPhotoUrl } from "@/lib/format";
 import type { DailyReport } from "@/lib/types";
 
@@ -129,10 +130,7 @@ export function PostcardButton({
                   {sent ? <><Check className="h-5 w-5" /> Enviado al dueño</> : <><Send className="h-4 w-4" /> Enviar por WhatsApp</>}
                 </button>
 
-                <div className="mt-3 flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-xs text-accent">
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  Mensaje simulado para demostración. Sin integración real de WhatsApp.
-                </div>
+                <Disclaimer variant="whatsapp" className="mt-3" />
               </div>
             </motion.div>
           </div>

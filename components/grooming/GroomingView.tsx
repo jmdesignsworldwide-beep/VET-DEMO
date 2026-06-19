@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Scissors, Search, Clock, Sparkles, Bell, MessageCircle, AlertTriangle } from "lucide-react";
+import { Scissors, Search, Clock, Sparkles, Bell, MessageCircle } from "lucide-react";
 import { Stagger, Reveal } from "@/components/motion/Reveal";
 import { CountUp } from "@/components/motion/CountUp";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { DetailModal } from "@/components/shared/DetailModal";
+import { Disclaimer } from "@/components/shared/Disclaimer";
 import { Input } from "@/components/ui/Form";
 import { PulseDot } from "@/components/motion/PulseDot";
 import { PetAvatar } from "@/components/dashboard/PetAvatar";
@@ -166,10 +167,7 @@ export function GroomingView({
 
           {tab === "recordatorios" && (
             <>
-              <div className="mb-4 flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                Mensaje simulado para demostración. Sin integración real de WhatsApp.
-              </div>
+              <Disclaimer variant="whatsapp" className="mb-4" />
               {reminders.length === 0 ? <Empty text="Sin recordatorios pendientes." /> :
                 <Stagger className="space-y-3">
                   {reminders.map((a) => (
