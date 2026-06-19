@@ -319,3 +319,11 @@ export interface Backup {
   size_mb: number | null;
   created_at: string;
 }
+
+export interface Profile {
+  id: string;
+  username: string;
+  role: "admin" | "cliente";
+  expires_at: string | null;
+  created_at: string;
+}

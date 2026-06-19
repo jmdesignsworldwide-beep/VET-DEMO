@@ -6,17 +6,24 @@ import { motion } from "framer-motion";
 import { NAV } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-/** Lista de navegación con indicador activo deslizante (layoutId). */
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+/** Lista de navegación con indicador activo deslizante (layoutId).
+ *  Los ítems admin-only solo se muestran al rol admin. */
+export function SidebarNav({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const items = NAV.filter((i) => !i.adminOnly || isAdmin);
 
   return (
     <nav className="flex flex-col gap-1">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href;
         const Icon = item.icon;
-        const content = (
-          <>
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-ink/[0.04]"
+          >
             {active && (
               <motion.span
                 layoutId="nav-active"
@@ -27,9 +34,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             <Icon
               className={cn(
                 "relative z-10 h-[18px] w-[18px] transition-colors",
-                active
-                  ? "text-brand-glow"
-                  : "text-muted group-hover:text-ink",
+                active ? "text-brand-glow" : "text-muted group-hover:text-ink",
               )}
             />
             <span
@@ -40,27 +45,6 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             >
               {item.label}
             </span>
-            {item.soon && (
-              <span className="relative z-10 ml-auto rounded-full bg-ink/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                Pronto
-              </span>
-            )}
-          </>
-        );
-
-        const className = cn(
-          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5",
-          "transition-colors hover:bg-ink/[0.04]",
-        );
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={className}
-          >
-            {content}
           </Link>
         );
       })}

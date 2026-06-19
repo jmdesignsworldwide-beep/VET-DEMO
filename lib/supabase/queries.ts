@@ -28,6 +28,7 @@ import type {
   WhatsAppLog,
   AuditLog,
   Backup,
+  Profile,
 } from "@/lib/types";
 
 /** Dueños con sus mascotas (búsqueda opcional por nombre/cédula/teléfono). */
@@ -152,6 +153,28 @@ export async function getGroomingData(): Promise<GroomingData> {
     appointments: (appointments.data as GroomingAppointmentFull[]) ?? [],
     photos: (photos.data as GroomingPhotoFull[]) ?? [],
   };
+}
+
+// ───────────────────────── Cuentas / perfiles ─────────────────────────
+
+/** Perfil del usuario autenticado actual (rol, vencimiento). */
+export async function getCurrentProfile(): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  return (data as Profile) ?? null;
+}
+
+/** Lista de cuentas de cliente (solo accesible para admin vía RLS). */
+export async function getAccounts(): Promise<Profile[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("role", "cliente")
+    .order("created_at", { ascending: false });
+  return (data as Profile[]) ?? [];
 }
 
 // ───────────────────────── Administración ─────────────────────────

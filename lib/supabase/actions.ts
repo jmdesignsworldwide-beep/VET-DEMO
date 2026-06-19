@@ -3,6 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const INTERNAL_DOMAIN = "nido.local";
+
+/** Verifica que el llamante sea admin (en servidor). */
+async function requireAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Sesión no válida." };
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (me?.role !== "admin") return { ok: false as const, error: "No autorizado." };
+  return { ok: true as const };
+}
 
 export interface ActionResult {
   ok: boolean;
@@ -10,14 +23,96 @@ export interface ActionResult {
   id?: string;
 }
 
-// ───────────────────────── Auth demo ─────────────────────────
-export async function signInDemo() {
+// ───────────────────────── Auth (usuario + contraseña) ─────────────────────────
+function emailFor(username: string) {
+  return `${username.trim().toLowerCase()}@${INTERNAL_DOMAIN}`;
+}
+
+/** Login por usuario. Mapea a email interno y verifica vencimiento en servidor. */
+export async function signInUsername(input: { username: string; password: string }): Promise<{ error?: string; expired?: boolean }> {
   const supabase = await createClient();
-  await supabase.auth.signInWithPassword({
-    email: "demo@clinicanido.do",
-    password: "NidoDemo2026!",
+  if (!input.username?.trim() || !input.password) return { error: "Ingresa usuario y contraseña." };
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: emailFor(input.username),
+    password: input.password,
   });
+  if (error) return { error: "Usuario o contraseña incorrectos." };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from("profiles").select("role, expires_at").eq("id", user!.id).maybeSingle();
+
+  if (!profile) {
+    await supabase.auth.signOut();
+    return { error: "Cuenta no válida. Contacta a JM Designs." };
+  }
+  const expired = profile.role !== "admin" && !!profile.expires_at && new Date(profile.expires_at).getTime() < Date.now();
+  if (expired) {
+    await supabase.auth.signOut();
+    return { expired: true };
+  }
   redirect("/dashboard");
+}
+
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
+/** Crea una cuenta de cliente (usuario + contraseña + días de acceso). Admin-only. */
+export async function createClientAccount(input: { username: string; password: string; days: number | null }): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { ok: false, error: auth.error };
+
+  const username = input.username.trim().toLowerCase();
+  if (!/^[a-z0-9._-]{3,30}$/.test(username)) return { ok: false, error: "Usuario inválido (3–30, letras/números/.-_)." };
+  if (!input.password || input.password.length < 6) return { ok: false, error: "La contraseña debe tener al menos 6 caracteres." };
+
+  const admin = createAdminClient();
+  const { data: created, error: cErr } = await admin.auth.admin.createUser({
+    email: emailFor(username),
+    password: input.password,
+    email_confirm: true,
+    user_metadata: { username },
+  });
+  if (cErr || !created.user) {
+    return { ok: false, error: /already/i.test(cErr?.message ?? "") ? "Ese usuario ya existe." : (cErr?.message ?? "Error al crear la cuenta.") };
+  }
+
+  const expires_at = input.days ? new Date(Date.now() + input.days * 86400000).toISOString() : null;
+  const { error: pErr } = await admin.from("profiles").insert({
+    id: created.user.id, username, role: "cliente", expires_at,
+  });
+  if (pErr) {
+    await admin.auth.admin.deleteUser(created.user.id); // rollback
+    return { ok: false, error: /duplicate|unique/i.test(pErr.message) ? "Ese usuario ya existe." : pErr.message };
+  }
+
+  await admin.from("audit_log").insert({ actor: "Admin Nido", action: "Creó cuenta de cliente", entity: "Cuentas", detail: `Usuario ${username}` });
+  revalidatePath("/ajustes");
+  return { ok: true, id: created.user.id };
+}
+
+/** Renueva/extiende una cuenta (suma días) o quita el vencimiento. Admin-only. */
+export async function extendAccount(id: string, input: { days?: number; clear?: boolean }): Promise<ActionResult> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { ok: false, error: auth.error };
+
+  const supabase = await createClient();
+  let expires_at: string | null;
+  if (input.clear) {
+    expires_at = null;
+  } else {
+    const { data: cur } = await supabase.from("profiles").select("expires_at").eq("id", id).maybeSingle();
+    const base = cur?.expires_at && new Date(cur.expires_at).getTime() > Date.now() ? new Date(cur.expires_at).getTime() : Date.now();
+    expires_at = new Date(base + (input.days ?? 0) * 86400000).toISOString();
+  }
+
+  const { error } = await supabase.from("profiles").update({ expires_at }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/ajustes");
+  return { ok: true };
 }
 
 // ───────────────────────── Dueños ─────────────────────────
