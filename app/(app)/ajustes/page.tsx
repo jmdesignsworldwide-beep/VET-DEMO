@@ -1,14 +1,14 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getCurrentProfile, getAccounts } from "@/lib/supabase/queries";
+import { AccountsView } from "@/components/admin/AccountsView";
 
-import { Settings } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+export const dynamic = "force-dynamic";
 
-export default function AjustesPage() {
-  return (
-    <ComingSoon
-      icon={Settings}
-      title="Ajustes"
-      description="Configuración de la clínica, usuarios del equipo y preferencias del sistema."
-    />
-  );
+export default async function AjustesPage() {
+  // Verificación de servidor: solo admin (además del middleware).
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "admin") redirect("/dashboard");
+
+  const accounts = await getAccounts();
+  return <AccountsView accounts={accounts} />;
 }

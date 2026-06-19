@@ -5,8 +5,10 @@ import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 /** Tarjeta de usuario + cerrar sesión. */
-export function UserChip() {
+export function UserChip({ username, role }: { username: string; role: string }) {
   const router = useRouter();
+  const isAdmin = role === "admin";
+  const initials = username.slice(0, 2).toUpperCase();
 
   async function signOut() {
     const supabase = createClient();
@@ -17,12 +19,12 @@ export function UserChip() {
 
   return (
     <div className="flex items-center gap-3 rounded-2xl glass p-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-glow text-sm font-bold text-[#3a0d18]">
-        AN
+      <span className={`grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br text-sm font-bold ${isAdmin ? "from-brand to-brand-glow text-[#04201d]" : "from-accent to-accent-glow text-[#3a0d18]"}`}>
+        {initials}
       </span>
       <div className="min-w-0 leading-tight">
-        <p className="truncate text-sm font-semibold">Admin Nido</p>
-        <p className="truncate text-[11px] text-muted">Administrador</p>
+        <p className="truncate text-sm font-semibold">{username}</p>
+        <p className="truncate text-[11px] text-muted">{isAdmin ? "Administrador" : "Cliente"}</p>
       </div>
       <button
         type="button"

@@ -5,7 +5,7 @@ import {
   Scissors,
   PawPrint,
   Building2,
-  Settings,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,8 +13,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Módulo aún por construir → se muestra con etiqueta "Pronto". */
-  soon?: boolean;
+  /** Solo visible/accesible para el rol admin. */
+  adminOnly?: boolean;
 }
 
 export const NAV: NavItem[] = [
@@ -24,5 +24,5 @@ export const NAV: NavItem[] = [
   { label: "Hotel canino", href: "/hotel", icon: BedDouble },
   { label: "Peluquería", href: "/peluqueria", icon: Scissors },
   { label: "Administración", href: "/admin", icon: Building2 },
-  { label: "Ajustes", href: "/ajustes", icon: Settings },
+  { label: "Cuentas", href: "/ajustes", icon: ShieldCheck, adminOnly: true },
 ];
