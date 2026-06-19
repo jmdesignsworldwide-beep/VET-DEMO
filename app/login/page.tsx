@@ -103,7 +103,7 @@ function Field({
 }) {
   return (
     <label className="group flex h-12 items-center gap-3 rounded-xl border border-hairline/10 bg-ink/[0.03] px-4 transition-colors focus-within:border-brand/40 focus-within:bg-ink/[0.05]">
-      <span className="text-muted transition-colors group-focus-within:text-brand-glow">{icon}</span>
+      <span className="text-muted transition-colors group-focus-within:text-brand dark:group-focus-within:text-brand-glow">{icon}</span>
       <input
         type={type}
         required
