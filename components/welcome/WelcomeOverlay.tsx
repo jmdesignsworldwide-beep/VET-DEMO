@@ -60,7 +60,7 @@ export function WelcomeOverlay({ name }: { name: string }) {
   const shutterTransition = { duration: 0.85, ease: [0.83, 0, 0.17, 1] as const, delay: 0.2 };
 
   return (
-    <div className="fixed inset-0 z-[100]" aria-hidden role="presentation">
+    <div className="pointer-events-none fixed inset-0 z-[100]" aria-hidden role="presentation">
       {/* ── Cortina (dos hojas) ── */}
       {reduce ? (
         <motion.div className="absolute inset-0 bg-canvas" animate={out ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.35 }}>

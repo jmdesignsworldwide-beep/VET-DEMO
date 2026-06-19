@@ -59,6 +59,17 @@
       color 0.4s ease;
   }
 
+  /* Toques ágiles en móvil (sin retardo de 300ms ni doble-tap-zoom) */
+  button,
+  a,
+  [role="button"],
+  label,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
   /* Números financieros / KPIs siempre tabulares */
   .tnum {
     font-variant-numeric: tabular-nums;

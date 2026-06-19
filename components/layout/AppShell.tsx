@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Clock } from "lucide-react";
 import { Brand } from "./Brand";
@@ -33,8 +34,16 @@ export function AppShell({
   expiresAt: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const left = !isAdmin ? daysLeft(expiresAt) : null;
   const expiringSoon = left != null && left >= 0 && left <= 3;
+
+  // Seguro: al cambiar de ruta, cierra el drawer y libera cualquier
+  // bloqueo de scroll que un modal pudiera haber dejado. Nunca atrapar.
+  useEffect(() => {
+    setOpen(false);
+    document.body.style.overflow = "";
+  }, [pathname]);
 
   return (
     <div className="min-h-dvh">
