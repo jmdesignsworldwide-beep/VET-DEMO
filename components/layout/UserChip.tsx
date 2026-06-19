@@ -11,6 +11,7 @@ export function UserChip({ username, role }: { username: string; role: string })
   const initials = username.slice(0, 2).toUpperCase();
 
   async function signOut() {
+    try { sessionStorage.removeItem("nido_welcome_seen"); } catch {}
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");

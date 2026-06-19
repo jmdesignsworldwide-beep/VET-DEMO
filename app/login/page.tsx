@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { User, Lock, Loader2, ArrowRight } from "lucide-react";
@@ -15,6 +15,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // En la pantalla de login, reinicia el flag para que la bienvenida
+  // aparezca de nuevo tras el próximo inicio de sesión.
+  useEffect(() => {
+    try { sessionStorage.removeItem("nido_welcome_seen"); } catch {}
+  }, []);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

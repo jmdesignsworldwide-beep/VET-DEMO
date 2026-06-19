@@ -1,11 +1,13 @@
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { AppShell } from "@/components/layout/AppShell";
+import { WelcomeOverlay } from "@/components/welcome/WelcomeOverlay";
 import { getCurrentProfile } from "@/lib/supabase/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
+  const displayName = profile?.role === "admin" ? "Admin" : (profile?.username ?? "");
 
   return (
     <>
@@ -18,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         {children}
       </AppShell>
+      <WelcomeOverlay name={displayName} />
     </>
   );
 }
