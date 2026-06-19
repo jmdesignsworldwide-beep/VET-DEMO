@@ -34,7 +34,7 @@ export function SidebarNav({ isAdmin, onNavigate }: { isAdmin: boolean; onNaviga
             <Icon
               className={cn(
                 "relative z-10 h-[18px] w-[18px] transition-colors",
-                active ? "text-brand-glow" : "text-muted group-hover:text-ink",
+                active ? "text-brand dark:text-brand-glow" : "text-muted group-hover:text-ink",
               )}
             />
             <span

@@ -1,14 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { TrendingUp } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
-
+/** La sección de ventas/ingresos vive ahora en Administración. */
 export default function VentasPage() {
-  return (
-    <ComingSoon
-      icon={TrendingUp}
-      title="Ventas e ingresos"
-      description="Ingresos por área, tendencias del mes y reportes financieros de Clínica Nido."
-    />
-  );
+  redirect("/admin");
 }
