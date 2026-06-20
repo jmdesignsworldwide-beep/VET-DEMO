@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkLock, registerFailure, resetAttempts, lockMessage } from "@/lib/auth/throttle";
 
 const INTERNAL_DOMAIN = "nido.local";
 
@@ -29,15 +30,29 @@ function emailFor(username: string) {
 }
 
 /** Login por usuario. Mapea a email interno y verifica vencimiento en servidor. */
-export async function signInUsername(input: { username: string; password: string }): Promise<{ error?: string; expired?: boolean }> {
+export async function signInUsername(input: { username: string; password: string }): Promise<{ error?: string; expired?: boolean; retryAfter?: number }> {
   const supabase = await createClient();
   if (!input.username?.trim() || !input.password) return { error: "Ingresa usuario y contraseña." };
 
+  const username = input.username.trim().toLowerCase();
+
+  // 1) ¿Bloqueado por demasiados intentos? (no revela si el usuario existe)
+  const lock = await checkLock(username);
+  if (lock.locked) return { error: lockMessage(lock.retryAfter!), retryAfter: lock.retryAfter };
+
+  // 2) Intento real contra Supabase Auth
   const { error } = await supabase.auth.signInWithPassword({
-    email: emailFor(input.username),
+    email: emailFor(username),
     password: input.password,
   });
-  if (error) return { error: "Usuario o contraseña incorrectos." };
+  if (error) {
+    const fail = await registerFailure(username);
+    if (fail.locked) return { error: lockMessage(fail.retryAfter!), retryAfter: fail.retryAfter };
+    return { error: "Usuario o contraseña incorrectos." };
+  }
+
+  // 3) Éxito → limpia el contador de fallos de ese usuario
+  await resetAttempts(username);
 
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase.from("profiles").select("role, expires_at").eq("id", user!.id).maybeSingle();

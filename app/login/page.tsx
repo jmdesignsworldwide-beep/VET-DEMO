@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Lock, Loader2, ArrowRight } from "lucide-react";
+import { User, Lock, Loader2, ArrowRight, ShieldAlert } from "lucide-react";
 import { signInUsername } from "@/lib/supabase/actions";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -15,6 +15,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [lockRemaining, setLockRemaining] = useState(0); // segundos restantes del bloqueo
+
+  const locked = lockRemaining > 0;
 
   // En la pantalla de login, reinicia el flag para que la bienvenida
   // aparezca de nuevo tras el próximo inicio de sesión.
@@ -22,15 +25,31 @@ export default function LoginPage() {
     try { sessionStorage.removeItem("nido_welcome_seen"); } catch {}
   }, []);
 
+  // Cuenta regresiva del bloqueo: tic-tac hasta liberar el formulario.
+  useEffect(() => {
+    if (lockRemaining <= 0) return;
+    const id = setInterval(() => {
+      setLockRemaining((s) => {
+        if (s <= 1) { clearInterval(id); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockRemaining]);
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (locked) return;
     setError(null);
     start(async () => {
       const res = await signInUsername({ username, password });
       if (res?.expired) return router.push("/acceso-expirado");
+      if (res?.retryAfter) { setError(null); setLockRemaining(res.retryAfter); return; }
       if (res?.error) return setError(res.error);
     });
   }
+
+  const mmss = `${Math.floor(lockRemaining / 60)}:${String(lockRemaining % 60).padStart(2, "0")}`;
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center px-4 py-10">
@@ -70,18 +89,36 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
 
-            {error && (
+            {error && !locked && (
               <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="text-sm font-medium text-accent">
                 {error}
               </motion.p>
             )}
 
+            {locked && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3"
+              >
+                <ShieldAlert className="h-5 w-5 shrink-0 text-amber-500" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Demasiados intentos fallidos</p>
+                  <p className="text-xs text-muted">
+                    Por seguridad, espera <span className="tnum font-semibold text-ink">{mmss}</span> antes de volver a intentar.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             <button
               type="submit"
-              disabled={pending}
+              disabled={pending || locked}
               className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand to-brand-glow font-semibold text-[#04201d] shadow-glow transition-transform active:scale-[0.99] disabled:opacity-70"
             >
-              {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+              {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : locked ? (
+                <><Lock className="h-4 w-4" /> Bloqueado · {mmss}</>
+              ) : (
                 <>Iniciar sesión <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>
               )}
             </button>
